@@ -53,12 +53,9 @@ namespace DatabaseUtilities
         }
         static void Main(string[] args)
         {
-<<<<<<< HEAD
-            ssis_foo();
-=======
+            //ssis_foo();
             //createEtl();
             createEtlFromExcel();
->>>>>>> origin/master
             CommonUtils.CommonUtils.user_exit();
         }
     }
