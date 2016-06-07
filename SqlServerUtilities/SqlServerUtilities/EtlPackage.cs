@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 namespace DatabaseUtilities
 {
     using connection_dictionary = Dictionary<string, string>;
+    using Microsoft.SqlServer.Dts.Tasks.ExecuteSQLTask;
     public class EtlPackage : IEtlPackage
     {
         private Package _package;
@@ -354,6 +355,57 @@ namespace DatabaseUtilities
             foreach (DataRow row in excel_table.Rows)
             {
                 Console.WriteLine(string.Format("container: {0}",row[0]));
+            }
+        }
+        public void addSqlTask(Executables execs, string sql_source)
+        {
+            Executable e = execs.Add("STOCK:SQLTask");
+            TaskHost th = e as TaskHost;
+            ExecuteSQLTask sql_task = th.InnerObject as ExecuteSQLTask;
+            sql_task.SqlStatementSourceType = SqlStatementSourceType.DirectInput;
+            Console.WriteLine("BypassPrepare          {0}", th.Properties["BypassPrepare"].GetValue(th));
+            Console.WriteLine("CodePage               {0}", th.Properties["CodePage"].GetValue(th));
+            Console.WriteLine("Connection             {0}", th.Properties["Connection"].GetValue(th));
+            Console.WriteLine("ExecutionValue         {0}", th.Properties["ExecutionValue"].GetValue(th));
+            Console.WriteLine("IsStoredProcedure      {0}", th.Properties["IsStoredProcedure"].GetValue(th));
+            Console.WriteLine("ParameterBindings      {0}", th.Properties["ParameterBindings"].GetValue(th));
+            Console.WriteLine("ResultSetBindings      {0}", th.Properties["ResultSetBindings"].GetValue(th));
+            Console.WriteLine("ResultSetType          {0}", th.Properties["ResultSetType"].GetValue(th));
+            Console.WriteLine("SqlStatementSource     {0}", th.Properties["SqlStatementSource"].GetValue(th));
+            Console.WriteLine("SqlStatementSourceType {0}", th.Properties["SqlStatementSourceType"].GetValue(th));
+            Console.WriteLine("TimeOut                {0}", th.Properties["TimeOut"].GetValue(th));
+
+            Variable myVar = _package.Variables.Add("myVar", false, "User", 100);
+            th.Properties["SqlStatementSourceType"].SetValue(th, SqlStatementSourceType.Variable);
+            th.Properties["SqlStatementSource"].SetValue(th, "myVar");
+            th.Properties["ResultSetType"].SetValue(th, ResultSetType.ResultSetType_XML);
+
+            Console.WriteLine("New value of Source and SourceType:  {0}, {1}", th.Properties["SqlStatementSource"].GetValue(th), th.Properties["SqlStatementSourceType"].GetValue(th));
+            Console.WriteLine("New value of ResultSetType:  {0}", th.Properties["ResultSetType"].GetValue(th), th.Properties["SqlStatementSourceType"].GetValue(th));
+
+        }
+        public void addTruncatePopulate(Executables execs, string src_server_name, string src_database_name, string src_schema_name, string src_table_name, string dst_server_name, string dst_database_name, string dst_schema_name, string dst_table_name)
+        {
+            Table dst_table = SchemaReader.getTable(dst_server_name, dst_database_name, dst_schema_name, dst_table_name);
+            Table src_table = SchemaReader.getTable(src_server_name, src_database_name, src_schema_name, src_table_name);
+            Database src_database = SchemaReader.getDatabase(src_server_name, src_database_name);
+            Database dst_database = SchemaReader.getDatabase(dst_server_name, dst_database_name);
+            foreach (Table _src_table in src_database.Tables)
+            {
+                if (src_table.Schema == src_schema_name && dst_database.Tables[src_table.Name, src_table.Schema] != null)
+                {
+                    addDataFlowTask(execs, src_table, dst_database.Tables[src_table.Name, src_table.Schema]);
+
+                    Microsoft.SqlServer.Dts.Runtime.Sequence seq = (Microsoft.SqlServer.Dts.Runtime.Sequence)execs.Add("STOCK:SEQUENCE");
+                    seq.Name = string.Format("{0}", dst_table.Name);
+                    Executable e = seq.Executables.Add("STOCK:SQLTask");
+                    TaskHost th = e as TaskHost;
+                    ExecuteSQLTask sql_task = th.InnerObject as ExecuteSQLTask;
+                    sql_task.SqlStatementSourceType = SqlStatementSourceType.DirectInput;
+                    sql_task.SqlStatementSource = string.Format("TRUNCATE TABLE {0}.{1}.{2};", dst_table.Parent.Name, dst_table.Schema, dst_table.Name);
+                    sql_task.Connection = getConnection(dst_table);
+                    addDataFlowTask(seq.Executables, src_table, dst_table);
+                }
             }
         }
     }
