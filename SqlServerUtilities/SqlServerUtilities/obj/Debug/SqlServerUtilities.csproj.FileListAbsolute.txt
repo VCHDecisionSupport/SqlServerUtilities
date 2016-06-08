@@ -1,0 +1,7 @@
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\SqlServerUtilities.exe.config
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\SqlServerUtilities.exe
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\SqlServerUtilities.pdb
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\obj\Debug\SqlServerUtilities.csprojResolveAssemblyReference.cache
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\obj\Debug\SqlServerUtilities.exe
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\obj\Debug\SqlServerUtilities.pdb
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.SQLTask.dll
