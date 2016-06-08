@@ -1,14 +1,14 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using DocumentFormat.OpenXml.Packaging;
-using DocumentFormat.OpenXml.Spreadsheet;
-using DatabaseUtilities;
+using Microsoft.SqlServer.Management.Smo;
+using Microsoft.SqlServer.Management.Sdk.Sfc;  
 
-namespace DatabaseUtilities
+namespace SqlServerUtilities
 {
     class Program
     {
@@ -21,16 +21,6 @@ namespace DatabaseUtilities
             pkg.addDataFlowTasksBySchema("CommunityMart", "dbo", @"STDBDECSUP02", @"STDBDECSUP01");
             pkg.addDataFlowTasksBySchema("CommunityMart", "Dim", @"STDBDECSUP02", @"STDBDECSUP01");
             pkg.savePackage();
-        }
-       static void excel_foo()
-        {
-            const string fileName = @"data_copy_params.xlsx";
-            //string A1 = ExcelHandler.GetCellValue(fileName, "Sheet1", "A1");
-            //Console.WriteLine(A1);
-            ExcelHandler.InsertText(fileName, "Sheet1");
-
-            //Console.WriteLine(ExcelHandler.ParseAddressName("GH43"));
-            //ExcelHandler.InsertText(fileName, "F5", "hi there");
         }
         static void createEtl()
         {
@@ -81,14 +71,125 @@ namespace DatabaseUtilities
             //pkg.addTruncatePopulate(src_server_name, src_database_name, src_schema_name, src_table_name, dst_server_name, dst_database_name, dst_schema_name, dst_table_name);
             pkg.savePackage();
         }
+        private static void test_scripting()
+        {
+            ScriptingOptions opts = new ScriptingOptions();
+            //scripter.Options.DriAll = true;
+            opts.ScriptDrops = false;// script drops of objects that depend on this
+            opts.WithDependencies = true;
+            opts.ClusteredIndexes = true;
+            opts.IncludeIfNotExists = true;
+            opts.Indexes = true;// To include indexes  
+            opts.NoCollation = true; // stupid collation for character columns
+            opts.NonClusteredIndexes = true;   // to include referential constraints in the script 
+            opts.ScriptSchema = true;
+            opts.NoFileGroup = true;
+
+            Server server = SchemaReader.getServer("STDBDECSUP01");
+            Database database = server.Databases["DSDW"];
+            //Table table = database.Tables["ReferralReason", "Dim"];
+            Scripter scripter = new Scripter(server);
+            scripter.Options = opts;
+            //foreach (Table table in database.Tables)
+            //{
+            //    StringCollection str_col = scripter.Script(new Urn[] { table.Urn });
+            //    foreach (string sql in str_col)
+            //    {
+            //        Console.WriteLine(sql);
+            //    }
+            //    break;
+            //}
+
+            //foreach (StoredProcedure proc in database.StoredProcedures)
+            //{
+            //    StringCollection str_col = scripter.Script(new Urn[] { proc.Urn });
+            //    foreach (string sql in str_col)
+            //    {
+            //        Console.WriteLine(sql);
+            //    }
+            //    break;
+            //}
+
+            foreach (var obj in database.Schemas)
+            {
+                Console.WriteLine(obj.GetType().Name);
+                
+                SqlSmoObject smo_obj = obj as SqlSmoObject;
+                Schema sch = smo_obj as Schema;
+                break;
+                //StringCollection str_col = scripter.Script(database.Schemas.GetEnumerator().Current);
+                //foreach (string sql in str_col)
+                //{
+                //    Console.WriteLine(sql);
+                //}
+                break;
+            }
+            foreach (var obj in database.Tables)
+            {
+                Console.WriteLine(obj.GetType().Name);
+                SqlSmoObject smo_obj = obj as SqlSmoObject;
+                StringCollection str_col = scripter.Script(new Urn[] { smo_obj.Urn });
+                foreach (string sql in str_col)
+                {
+                    Console.WriteLine(sql);
+                }
+                break;
+            }
+
+            foreach (var obj in database.Views)
+            {
+                Console.WriteLine(obj.GetType().Name);
+                SqlSmoObject smo_obj = obj as SqlSmoObject;
+                StringCollection str_col = scripter.Script(new Urn[] { smo_obj.Urn });
+                foreach (string sql in str_col)
+                {
+                    Console.WriteLine(sql);
+                }
+                break;
+            }
+            foreach (var obj in database.UserDefinedFunctions)
+            {
+                Console.WriteLine(obj.GetType().Name);
+                SqlSmoObject smo_obj = obj as SqlSmoObject;
+                StringCollection str_col = scripter.Script(new Urn[] { smo_obj.Urn });
+                foreach (string sql in str_col)
+                {
+                    Console.WriteLine(sql);
+                }
+                break;
+            }
+            foreach (var obj in database.StoredProcedures)
+            {
+                Console.WriteLine(obj.GetType().Name);
+                SqlSmoObject smo_obj = obj as SqlSmoObject;
+                StringCollection str_col = scripter.Script(new Urn[] { smo_obj.Urn });
+                foreach (string sql in str_col)
+                {
+                    Console.WriteLine(sql);
+                }
+                break;
+            }
+
+        }
+        static void test_script_extensions()
+        {
+            Server server = SchemaReader.getServer("STDBDECSUP01");
+            Database database = server.Databases["DSDW"];
+            Console.WriteLine(database.ToScript());
+        }
         static void Main(string[] args)
         {
+            CommonUtils.CommonUtils.preExecutionSetup();
             //ssis_foo();
-            createEtl();
+            //createEtl();
             //createEtlFromExcel();
             //test_etl();
+            //test_scripting();
+            test_script_extensions();
             CommonUtils.CommonUtils.user_exit();
         }
+
+        
     }
 }
 

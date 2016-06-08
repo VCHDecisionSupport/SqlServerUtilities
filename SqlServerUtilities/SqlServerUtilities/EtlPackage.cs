@@ -10,7 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace DatabaseUtilities
+namespace SqlServerUtilities
 {
     using connection_dictionary = Dictionary<string, string>;
     using Microsoft.SqlServer.Dts.Tasks.ExecuteSQLTask;

@@ -96,5 +96,12 @@ namespace CommonUtils
             file.WriteLine(content);
             file.Close();
         }
+        public static void preExecutionSetup()
+        {
+            Console.BufferHeight = 9999;
+            Console.WindowHeight = (int)(Console.LargestWindowHeight * .5);
+            Console.BufferWidth = (int)(Console.LargestWindowWidth*.75);
+            Console.WindowWidth = (int)(Console.LargestWindowWidth * .75);
+        }
     }
 }
