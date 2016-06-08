@@ -40,10 +40,10 @@ namespace DatabaseUtilities
             pkg.addDataFlowTasksBySchema("CommunityMart", "dbo", src_server,dst_server);
             pkg.addDataFlowTasksBySchema("CommunityMart", "Dim", src_server,dst_server);
             pkg.savePackage();
-            pkg = new EtlPackage(string.Format("DSDW {0}-{1}.dtsx",src_server,dst_server));
-            pkg.addDataFlowTasksBySchema("DSDW", "dbo", src_server, dst_server);
-            pkg.addDataFlowTasksBySchema("DSDW", "Dim", src_server, dst_server);
-            pkg.savePackage();
+            //pkg = new EtlPackage(string.Format("DSDW {0}-{1}.dtsx",src_server,dst_server));
+            //pkg.addDataFlowTasksBySchema("DSDW", "dbo", src_server, dst_server);
+            //pkg.addDataFlowTasksBySchema("DSDW", "Dim", src_server, dst_server);
+            //pkg.savePackage();
         }
         static void test_etl()
         {
@@ -60,21 +60,21 @@ namespace DatabaseUtilities
             //pkg.addDataFlowTasksBySchema("CommunityMart", "Dim", src_server, dst_server);
             //pkg.addDataFlowTask(src_server_name, src_database_name, src_schema_name, src_table_name, dst_server_name, dst_database_name, dst_schema_name, dst_table_name);
             //pkg.addSqlTask(dst_server_name, dst_database_name, "this is task name", string.Format("TRUNCATE TABLE {0}.{1}.{2}",dst_database_name, dst_schema_name, dst_table_name));
-            pkg.addTruncatePopulate(src_server_name, src_database_name, src_schema_name, src_table_name, dst_server_name, dst_database_name, dst_schema_name, dst_table_name);
+            //pkg.addTruncatePopulate(src_server_name, src_database_name, src_schema_name, src_table_name, dst_server_name, dst_database_name, dst_schema_name, dst_table_name);
             pkg.savePackage();
         }
         static void createEtlFromExcel()
         {
             const string excel_file_name = @"data_copy_params.xlsx";
             EtlPackage pkg = new EtlPackage("autoEtl_FromExcel" + DateTime.Today.ToString("YYYY-MM-DD") + ".dtsx");
-            pkg.addDataFlowTasksFromExcel(excel_file_name);
+            //pkg.addDataFlowTasksFromExcel(excel_file_name);
         }
         static void Main(string[] args)
         {
             //ssis_foo();
-            //createEtl();
+            createEtl();
             //createEtlFromExcel();
-            test_etl();
+            //test_etl();
             CommonUtils.CommonUtils.user_exit();
         }
     }

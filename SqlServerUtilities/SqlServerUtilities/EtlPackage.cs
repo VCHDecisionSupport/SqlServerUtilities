@@ -75,6 +75,7 @@ namespace DatabaseUtilities
         public string savePackage(string package_name)
         {
             package_file_name = package_name;
+            _package.Name = Path.GetFileNameWithoutExtension(package_file_name);
             if (!IsSaved)
             {
                 Application app = new Application();
@@ -384,8 +385,7 @@ namespace DatabaseUtilities
          */
         public string addDataFlowTasksBySchema(string database_name, string schema_name, string src_server_name, string dst_server_name)
         {
-            Microsoft.SqlServer.Dts.Runtime.Sequence seq = (Microsoft.SqlServer.Dts.Runtime.Sequence)_package.Executables.Add("STOCK:SEQUENCE");
-            seq.Name = schema_name;
+            Sequence seq = addSequence(schema_name);
 
             Database src_database = SchemaReader.getDatabase(src_server_name, database_name);
             Database dst_database = SchemaReader.getDatabase(dst_server_name, database_name);
@@ -393,7 +393,7 @@ namespace DatabaseUtilities
             {
                 if (src_table.Schema == schema_name && dst_database.Tables[src_table.Name, src_table.Schema] != null)
                 {
-                    addDataFlowTask(seq.Executables, src_table, dst_database.Tables[src_table.Name, src_table.Schema]);
+                    addTruncatePopulate(seq.Executables, src_table, dst_database.Tables[src_table.Name, src_table.Schema]);
                 }
             }
             return seq.Name;
