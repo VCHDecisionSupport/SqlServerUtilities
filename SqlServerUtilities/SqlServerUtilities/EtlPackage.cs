@@ -14,20 +14,22 @@ namespace DatabaseUtilities
 {
     using connection_dictionary = Dictionary<string, string>;
     using Microsoft.SqlServer.Dts.Tasks.ExecuteSQLTask;
-    public class EtlPackage : IEtlPackage
+    using Sequence = Microsoft.SqlServer.Dts.Runtime.Sequence;
+
+    /// <summary>
+    /// Generates SSIS ETL *.dtsx package file.  
+    /// To allow for error handling, all implementating methods use SMO objects; 
+    /// overloading string based methods create corresponding SMO objects and call SMO based methods.
+    /// </summary>
+    public class EtlPackage
     {
         private Package _package;
         private connection_dictionary _connection_dict;
         private string _package_file_name;
-        //private string _src_database_name;
-        //private string _src_server_name;
-        //private string _src_cm_name;
-        //private string _dst_database_name;
-        //private string _dst_server_name;
-        //private string _dst_cm_name;
         private Regex connection_string_regex = new Regex(@"Data Source=(?<server_name>\w+);Initial Catalog=(?<database_name>\w+);Provider=SQLOLEDB.1;Integrated Security=SSPI;");
         public bool IsSaved { get; set; }
-        public string package_file_name {
+        public string package_file_name
+        {
             get
             {
                 if (_package_file_name == null)
@@ -44,13 +46,9 @@ namespace DatabaseUtilities
                 _package_file_name = value;
             }
         }
-        public EtlPackage(Package package)
+        public string cleanSsisTaskName(string task_name)
         {
-            _package = package;
-            _package.DelayValidation = true;
-            IsSaved = false;
-            _connection_dict = new connection_dictionary();
-            throw new NotImplementedException();
+            return Regex.Replace(task_name, @"[\[\]\\\.]", "", RegexOptions.None, TimeSpan.FromSeconds(1.5));
         }
         public EtlPackage(string file_name)
         {
@@ -66,42 +64,32 @@ namespace DatabaseUtilities
             _package.DelayValidation = true;
             IsSaved = false;
             _connection_dict = new connection_dictionary();
-            package_file_name = string.Format("autoEtl.{0}.dtsx",DateTime.Today.ToString("YYYY-MM-DD"));
+            package_file_name = string.Format("autoEtl.{0}.dtsx", DateTime.Today.ToString("YYYY-MM-DD"));
             //Executable exec = _package.Executables["FLC"];
             //Executable exec2 = (exec as IDTSSequence).Executables.Add("STOCK:ScriptTask");
         }
-        public string cleanSsisTaskName(string task_name)
-        {
-            return Regex.Replace(task_name, @"[\[\]\\\.]", "", RegexOptions.None, TimeSpan.FromSeconds(1.5));
-        }
-        public string savePackage(string pkg_path)
-        {
-
-
-            if (!IsSaved)
-            {
-
-                Application app = new Application();
-                _package.Validate(_package.Connections, null, null, null);
-                app.SaveToXml(pkg_path, _package, null);
-                Console.WriteLine("\r\n\r\npackage saved to:\r\n{0}\r\n{1}", Directory.GetCurrentDirectory(), pkg_path);
-                IsSaved = true;
-            }
-            return Path.Combine(pkg_path);
-        }
-        public string getPackageName()
-        {
-
-            //string package_name = string.Format("auto_package.dtsx");
-            return _package_file_name;
-        }
         public string savePackage()
         {
-            return savePackage(getPackageName());
+            return savePackage(package_file_name);
         }
-        public string getConnection(string server, string database)
+        public string savePackage(string package_name)
         {
-            string connection_name = string.Format("{0}-{1}", cleanSsisTaskName(server), cleanSsisTaskName(database));
+            package_file_name = package_name;
+            if (!IsSaved)
+            {
+                Application app = new Application();
+                _package.Validate(_package.Connections, null, null, null);
+                app.SaveToXml(package_name, _package, null);
+                Console.WriteLine("\r\n\r\npackage saved to:\r\n{0}\r\n{1}", Directory.GetCurrentDirectory(), package_name);
+                IsSaved = true;
+            }
+            return Path.Combine(package_name);
+        }
+        public string getConnectionName(Database database)
+        {
+            string server_name = database.Parent.Name;
+            string database_name = database.Name;
+            string connection_name = string.Format("{0}-{1}", cleanSsisTaskName(server_name), cleanSsisTaskName(database_name));
             if (_connection_dict.ContainsKey(connection_name))
             {
                 return connection_name;
@@ -113,7 +101,7 @@ namespace DatabaseUtilities
                 string confmt = "Data Source={0};" +
                   "Initial Catalog={1};Provider=SQLOLEDB.1;" +
                   "Integrated Security=SSPI;";
-                string connection_string = string.Format(confmt, server, database);
+                string connection_string = string.Format(confmt, server_name, database_name);
                 newConnectionManager.ConnectionString = connection_string;
                 _connection_dict.Add(connection_name, connection_string);
                 return connection_name;
@@ -152,13 +140,21 @@ namespace DatabaseUtilities
             //    return connection_name;
             //}
             //return connection_name;
-
         }
-        public string getConnection(Table table)
+        public string getConnectionName(Table table)
         {
             Database database = table.Parent;
             Server server = database.Parent;
-            return getConnection(server.Name, database.Name);
+            return getConnectionName(server.Name, database.Name);
+        }
+        public string getConnectionName(string server_name, string database_name)
+        {
+            Database database = SchemaReader.getDatabase(server_name, database_name);
+            return getConnectionName(database);
+        }
+        public string getTaskName()
+        {
+            return "";
         }
         /// <summary>
         /// Root implementation creation of a new Data Flow Task from src_table to dst_table in execs container.  All other addDataFlowTask methods overload this method.
@@ -167,11 +163,11 @@ namespace DatabaseUtilities
         /// <param name="src_table"></param>
         /// <param name="dst_table"></param>
         /// <returns></returns>
-        public string addDataFlowTask(Executables execs, Table src_table, Table dst_table)
+        public TaskHost addDataFlowTask(Executables execs, Table src_table, Table dst_table)
         {
             // initialize required connections
-            string _src_cm_name = getConnection(src_table);
-            string _dst_cm_name = getConnection(dst_table);
+            string _src_cm_name = getConnectionName(src_table);
+            string _dst_cm_name = getConnectionName(dst_table);
             string _src_server_name = src_table.Parent.Parent.Name;
             string _dst_server_name = dst_table.Parent.Parent.Name;
             //Console.WriteLine("\r\n{0}.{1}.{2}.{3} -->> {4}.{5}.{6}.{7}", src_table.Parent.Parent.ToString(), src_table.Parent.ToString(), src_table.Schema, src_table.Name, dst_table.Parent.Parent.ToString(), dst_table.Parent.ToString(), dst_table.Schema, dst_table.Name);
@@ -179,12 +175,12 @@ namespace DatabaseUtilities
             /* ADD DATA FLOW TASK */
 
             Executable e = execs.Add("STOCK:PipelineTask");
-            TaskHost thMainPipe = e as TaskHost;
-            thMainPipe.Name = cleanSsisTaskName(src_table.Name);
-            MainPipe dataFlowTask = thMainPipe.InnerObject as MainPipe;
+            TaskHost th = e as TaskHost;
+            th.Name = cleanSsisTaskName(src_table.Name);
+            MainPipe dataFlowTask = th.InnerObject as MainPipe;
             // The Application object will be used to obtain the CreationName of a PipelineComponentInfo from its PipelineComponentInfos collection.
             Application app = new Application();
-            thMainPipe.DelayValidation = true;
+            th.DelayValidation = true;
             /* ADD SOURCE COMPONENT */
 
             // Add an OLE DB source to the data flow the CreationName property requires an Application source_component_wrapper.
@@ -314,18 +310,78 @@ namespace DatabaseUtilities
 
             // validate _package
             DTSExecResult validation = _package.Validate(_package.Connections, null, null, null);
-            return thMainPipe.Name;
+            return th;
         }
-        public string addDataFlowTask(Table src_table, Table dst_table)
+
+        public TaskHost addDataFlowTask(Table src_table, Table dst_table)
         {
             return addDataFlowTask(_package.Executables, src_table, dst_table);
         }
-        public string addDataFlowTask(string src_server_name, string src_database_name, string src_schema_name, string src_table_name, string dst_server_name, string dst_database_name, string dst_schema_name, string dst_table_name)
+        public TaskHost addDataFlowTask(string src_server_name, string src_database_name, string src_schema_name, string src_table_name, string dst_server_name, string dst_database_name, string dst_schema_name, string dst_table_name)
         {
             Table src_table = SchemaReader.getTable(src_server_name, src_database_name, src_schema_name, src_table_name);
             Table dst_table = SchemaReader.getTable(dst_server_name, dst_database_name, dst_schema_name, dst_table_name);
             return addDataFlowTask(src_table, dst_table);
         }
+
+        public TaskHost addSqlTask(Executables execs, Database database, string task_name, string sql_source)
+        {
+            Executable e = execs.Add("STOCK:SQLTask");
+            TaskHost th = e as TaskHost;
+
+            ExecuteSQLTask sql_task = th.InnerObject as ExecuteSQLTask;
+            sql_task.SqlStatementSourceType = SqlStatementSourceType.DirectInput;
+            sql_task.SqlStatementSource = sql_source;
+            sql_task.Connection = getConnectionName(database.Parent.Name, database.Name);
+            th.Name = task_name;
+            //Console.WriteLine("BypassPrepare          {0}", th.Properties["BypassPrepare"].GetValue(th));
+            //Console.WriteLine("CodePage               {0}", th.Properties["CodePage"].GetValue(th));
+            //Console.WriteLine("Connection             {0}", th.Properties["Connection"].GetValue(th));
+            //Console.WriteLine("ExecutionValue         {0}", th.Properties["ExecutionValue"].GetValue(th));
+            //Console.WriteLine("IsStoredProcedure      {0}", th.Properties["IsStoredProcedure"].GetValue(th));
+            //Console.WriteLine("ParameterBindings      {0}", th.Properties["ParameterBindings"].GetValue(th));
+            //Console.WriteLine("ResultSetBindings      {0}", th.Properties["ResultSetBindings"].GetValue(th));
+            //Console.WriteLine("ResultSetType          {0}", th.Properties["ResultSetType"].GetValue(th));
+            //Console.WriteLine("SqlStatementSource     {0}", th.Properties["SqlStatementSource"].GetValue(th));
+            //Console.WriteLine("SqlStatementSourceType {0}", th.Properties["SqlStatementSourceType"].GetValue(th));
+            //Console.WriteLine("TimeOut                {0}", th.Properties["TimeOut"].GetValue(th));
+
+            //Variable myVar = _package.Variables.Add("myVar", false, "User", 100);
+            //th.Properties["SqlStatementSourceType"].SetValue(th, SqlStatementSourceType.Variable);
+            //th.Properties["SqlStatementSource"].SetValue(th, "myVar");
+            //th.Properties["ResultSetType"].SetValue(th, ResultSetType.ResultSetType_XML);
+
+            //Console.WriteLine("New value of Source and SourceType:  {0}, {1}", th.Properties["SqlStatementSource"].GetValue(th), th.Properties["SqlStatementSourceType"].GetValue(th));
+            //Console.WriteLine("New value of ResultSetType:  {0}", th.Properties["ResultSetType"].GetValue(th), th.Properties["SqlStatementSourceType"].GetValue(th));
+            return th;
+        }
+        public TaskHost addSqlTask(Executables execs, string server_name, string database_name, string task_name, string sql_source)
+        {
+            Database database = SchemaReader.getDatabase(server_name, database_name);
+            return addSqlTask(execs, database, task_name, sql_source);
+        }
+        public TaskHost addSqlTask(string server_name, string database_name, string task_name, string sql_source)
+        {
+            return addSqlTask(_package.Executables, server_name, database_name, task_name, sql_source);
+        }
+
+        public Sequence addSequence(Executables execs, string sequence_name)
+        {
+            //(Microsoft.SqlServer.Dts.Runtime.Sequence)
+            Executable e = execs.Add("STOCK:SEQUENCE");
+            Sequence seq = e as Sequence;
+            seq.Name = cleanSsisTaskName(sequence_name);
+            return seq;
+        }
+        public Sequence addSequence(string sequence_name)
+        {
+            return addSequence(_package.Executables, sequence_name);
+        }
+
+        /* Convience methods
+         * 
+         * 
+         */
         public string addDataFlowTasksBySchema(string database_name, string schema_name, string src_server_name, string dst_server_name)
         {
             Microsoft.SqlServer.Dts.Runtime.Sequence seq = (Microsoft.SqlServer.Dts.Runtime.Sequence)_package.Executables.Add("STOCK:SEQUENCE");
@@ -343,70 +399,29 @@ namespace DatabaseUtilities
             return seq.Name;
 
         }
-        public void getSequenceContainers()
+
+        public Sequence addTruncatePopulate(Executables execs, Table src_table, Table dst_table)
         {
+            Sequence seq = addSequence(execs, src_table.Name);
 
+            TaskHost th_sql = addSqlTask(seq.Executables, dst_table.Parent, string.Format("TRUNCATE TABLE {0}-{1}", dst_table.Schema, dst_table.Name), string.Format("TRUNCATE TABLE {0}.{1}", dst_table.Schema, dst_table.Name));
+            ExecuteSQLTask sql = th_sql.InnerObject as ExecuteSQLTask;
+            Executable e_sql = th_sql as Executable;
+
+            TaskHost th_df = addDataFlowTask(seq.Executables, src_table, dst_table);
+            MainPipe mp = th_df.InnerObject as MainPipe;
+            Executable e_df = th_df as Executable;
+
+            PrecedenceConstraint pre_const = seq.PrecedenceConstraints.Add(e_sql, e_df);
+            pre_const.Name = dst_table.Name;
+
+            return seq;
         }
-        public void addDataFlowTasksFromExcel(string excel_path)
-        {
-            DataTable excel_table = ExcelHandler.readExcel(excel_path);
-            
-            // get list of sequence containers
-            foreach (DataRow row in excel_table.Rows)
-            {
-                Console.WriteLine(string.Format("container: {0}",row[0]));
-            }
-        }
-        public void addSqlTask(Executables execs, string sql_source)
-        {
-            Executable e = execs.Add("STOCK:SQLTask");
-            TaskHost th = e as TaskHost;
-            ExecuteSQLTask sql_task = th.InnerObject as ExecuteSQLTask;
-            sql_task.SqlStatementSourceType = SqlStatementSourceType.DirectInput;
-            Console.WriteLine("BypassPrepare          {0}", th.Properties["BypassPrepare"].GetValue(th));
-            Console.WriteLine("CodePage               {0}", th.Properties["CodePage"].GetValue(th));
-            Console.WriteLine("Connection             {0}", th.Properties["Connection"].GetValue(th));
-            Console.WriteLine("ExecutionValue         {0}", th.Properties["ExecutionValue"].GetValue(th));
-            Console.WriteLine("IsStoredProcedure      {0}", th.Properties["IsStoredProcedure"].GetValue(th));
-            Console.WriteLine("ParameterBindings      {0}", th.Properties["ParameterBindings"].GetValue(th));
-            Console.WriteLine("ResultSetBindings      {0}", th.Properties["ResultSetBindings"].GetValue(th));
-            Console.WriteLine("ResultSetType          {0}", th.Properties["ResultSetType"].GetValue(th));
-            Console.WriteLine("SqlStatementSource     {0}", th.Properties["SqlStatementSource"].GetValue(th));
-            Console.WriteLine("SqlStatementSourceType {0}", th.Properties["SqlStatementSourceType"].GetValue(th));
-            Console.WriteLine("TimeOut                {0}", th.Properties["TimeOut"].GetValue(th));
-
-            Variable myVar = _package.Variables.Add("myVar", false, "User", 100);
-            th.Properties["SqlStatementSourceType"].SetValue(th, SqlStatementSourceType.Variable);
-            th.Properties["SqlStatementSource"].SetValue(th, "myVar");
-            th.Properties["ResultSetType"].SetValue(th, ResultSetType.ResultSetType_XML);
-
-            Console.WriteLine("New value of Source and SourceType:  {0}, {1}", th.Properties["SqlStatementSource"].GetValue(th), th.Properties["SqlStatementSourceType"].GetValue(th));
-            Console.WriteLine("New value of ResultSetType:  {0}", th.Properties["ResultSetType"].GetValue(th), th.Properties["SqlStatementSourceType"].GetValue(th));
-
-        }
-        public void addTruncatePopulate(Executables execs, string src_server_name, string src_database_name, string src_schema_name, string src_table_name, string dst_server_name, string dst_database_name, string dst_schema_name, string dst_table_name)
+        public Sequence addTruncatePopulate(Executables execs, string src_server_name, string src_database_name, string src_schema_name, string src_table_name, string dst_server_name, string dst_database_name, string dst_schema_name, string dst_table_name)
         {
             Table dst_table = SchemaReader.getTable(dst_server_name, dst_database_name, dst_schema_name, dst_table_name);
             Table src_table = SchemaReader.getTable(src_server_name, src_database_name, src_schema_name, src_table_name);
-            Database src_database = SchemaReader.getDatabase(src_server_name, src_database_name);
-            Database dst_database = SchemaReader.getDatabase(dst_server_name, dst_database_name);
-            foreach (Table _src_table in src_database.Tables)
-            {
-                if (src_table.Schema == src_schema_name && dst_database.Tables[src_table.Name, src_table.Schema] != null)
-                {
-                    addDataFlowTask(execs, src_table, dst_database.Tables[src_table.Name, src_table.Schema]);
-
-                    Microsoft.SqlServer.Dts.Runtime.Sequence seq = (Microsoft.SqlServer.Dts.Runtime.Sequence)execs.Add("STOCK:SEQUENCE");
-                    seq.Name = string.Format("{0}", dst_table.Name);
-                    Executable e = seq.Executables.Add("STOCK:SQLTask");
-                    TaskHost th = e as TaskHost;
-                    ExecuteSQLTask sql_task = th.InnerObject as ExecuteSQLTask;
-                    sql_task.SqlStatementSourceType = SqlStatementSourceType.DirectInput;
-                    sql_task.SqlStatementSource = string.Format("TRUNCATE TABLE {0}.{1}.{2};", dst_table.Parent.Name, dst_table.Schema, dst_table.Name);
-                    sql_task.Connection = getConnection(dst_table);
-                    addDataFlowTask(seq.Executables, src_table, dst_table);
-                }
-            }
+            return addTruncatePopulate(execs, src_table, dst_table);
         }
     }
 }

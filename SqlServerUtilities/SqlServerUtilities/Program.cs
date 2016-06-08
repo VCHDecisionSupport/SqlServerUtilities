@@ -45,6 +45,24 @@ namespace DatabaseUtilities
             pkg.addDataFlowTasksBySchema("DSDW", "Dim", src_server, dst_server);
             pkg.savePackage();
         }
+        static void test_etl()
+        {
+            string src_server_name = "STDBDECSUP03";
+            string src_database_name = "CommunityMart";
+            string src_schema_name = "Dim";
+            string src_table_name = "LocalReportingOffice";
+            string dst_server_name = "STDBDECSUP01";
+            string dst_database_name = "CommunityMart";
+            string dst_schema_name = "Dim";
+            string dst_table_name = "LocalReportingOffice";
+            EtlPackage pkg = new EtlPackage(string.Format("CommunityMart {0}-{1}.dtsx", src_server_name, dst_server_name));
+            //pkg.addDataFlowTasksBySchema("CommunityMart", "dbo", src_server, dst_server);
+            //pkg.addDataFlowTasksBySchema("CommunityMart", "Dim", src_server, dst_server);
+            //pkg.addDataFlowTask(src_server_name, src_database_name, src_schema_name, src_table_name, dst_server_name, dst_database_name, dst_schema_name, dst_table_name);
+            //pkg.addSqlTask(dst_server_name, dst_database_name, "this is task name", string.Format("TRUNCATE TABLE {0}.{1}.{2}",dst_database_name, dst_schema_name, dst_table_name));
+            pkg.addTruncatePopulate(src_server_name, src_database_name, src_schema_name, src_table_name, dst_server_name, dst_database_name, dst_schema_name, dst_table_name);
+            pkg.savePackage();
+        }
         static void createEtlFromExcel()
         {
             const string excel_file_name = @"data_copy_params.xlsx";
@@ -56,6 +74,7 @@ namespace DatabaseUtilities
             //ssis_foo();
             //createEtl();
             //createEtlFromExcel();
+            test_etl();
             CommonUtils.CommonUtils.user_exit();
         }
     }

@@ -61,7 +61,6 @@
     <Compile Include="CommonUtils.cs" />
     <Compile Include="EtlPackage.cs" />
     <Compile Include="ExcelHandler.cs" />
-    <Compile Include="IEtlPackage.cs" />
     <Compile Include="IExcelHandler.cs" />
     <Compile Include="ISchemaReader.cs" />
     <Compile Include="Program.cs" />
