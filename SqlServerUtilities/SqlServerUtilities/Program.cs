@@ -34,16 +34,34 @@ namespace DatabaseUtilities
         }
         static void createEtl()
         {
-            string src_server = "STDBDECSUP03";
-            string dst_server = "STDBDECSUP01";
-            EtlPackage pkg = new EtlPackage(string.Format("CommunityMart {0}-{1}.dtsx", src_server, dst_server));
-            pkg.addDataFlowTasksBySchema("CommunityMart", "dbo", src_server,dst_server);
-            pkg.addDataFlowTasksBySchema("CommunityMart", "Dim", src_server,dst_server);
+            string src_server;
+            string dst_server;
+            EtlPackage pkg;
+
+            dst_server = "STDBDECSUP01";
+            src_server = "STDBDECSUP03";
+            pkg = new EtlPackage(string.Format("CommunityMart {0}-{1}.dtsx", src_server, dst_server));
+            pkg.addDataFlowTasksBySchema("CommunityMart", "dbo", src_server, dst_server);
+            pkg.addDataFlowTasksBySchema("CommunityMart", "Dim", src_server, dst_server);
             pkg.savePackage();
-            //pkg = new EtlPackage(string.Format("DSDW {0}-{1}.dtsx",src_server,dst_server));
-            //pkg.addDataFlowTasksBySchema("DSDW", "dbo", src_server, dst_server);
-            //pkg.addDataFlowTasksBySchema("DSDW", "Dim", src_server, dst_server);
-            //pkg.savePackage();
+
+            pkg = new EtlPackage(string.Format("DSDW {0}-{1}.dtsx", src_server, dst_server));
+            pkg.addDataFlowTasksBySchema("DSDW", "Community", src_server, dst_server);
+            pkg.addDataFlowTasksBySchema("DSDW", "Dim", src_server, dst_server);
+            pkg.savePackage();
+            
+            
+            dst_server = "STDBDECSUP01";
+            src_server = "STDBDECSUP02";
+            pkg = new EtlPackage(string.Format("CommunityMart {0}-{1}.dtsx", src_server, dst_server));
+            pkg.addDataFlowTasksBySchema("CommunityMart", "dbo", src_server, dst_server);
+            pkg.addDataFlowTasksBySchema("CommunityMart", "Dim", src_server, dst_server);
+            pkg.savePackage();
+            
+            pkg = new EtlPackage(string.Format("DSDW {0}-{1}.dtsx", src_server, dst_server));
+            pkg.addDataFlowTasksBySchema("DSDW", "Community", src_server, dst_server);
+            pkg.addDataFlowTasksBySchema("DSDW", "Dim", src_server, dst_server);
+            pkg.savePackage();
         }
         static void test_etl()
         {
@@ -62,12 +80,6 @@ namespace DatabaseUtilities
             //pkg.addSqlTask(dst_server_name, dst_database_name, "this is task name", string.Format("TRUNCATE TABLE {0}.{1}.{2}",dst_database_name, dst_schema_name, dst_table_name));
             //pkg.addTruncatePopulate(src_server_name, src_database_name, src_schema_name, src_table_name, dst_server_name, dst_database_name, dst_schema_name, dst_table_name);
             pkg.savePackage();
-        }
-        static void createEtlFromExcel()
-        {
-            const string excel_file_name = @"data_copy_params.xlsx";
-            EtlPackage pkg = new EtlPackage("autoEtl_FromExcel" + DateTime.Today.ToString("YYYY-MM-DD") + ".dtsx");
-            //pkg.addDataFlowTasksFromExcel(excel_file_name);
         }
         static void Main(string[] args)
         {
