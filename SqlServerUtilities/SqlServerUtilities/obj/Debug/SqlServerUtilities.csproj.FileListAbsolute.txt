@@ -5,3 +5,12 @@ C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServ
 C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\obj\Debug\SqlServerUtilities.exe
 C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\obj\Debug\SqlServerUtilities.pdb
 C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.SQLTask.dll
+C:\Users\user\Documents\GitHub\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\SqlServerUtilities.exe.config
+C:\Users\user\Documents\GitHub\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\SqlServerUtilities.exe
+C:\Users\user\Documents\GitHub\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\SqlServerUtilities.pdb
+C:\Users\user\Documents\GitHub\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\DocumentFormat.OpenXml.dll
+C:\Users\user\Documents\GitHub\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.SQLTask.dll
+C:\Users\user\Documents\GitHub\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\DocumentFormat.OpenXml.xml
+C:\Users\user\Documents\GitHub\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\obj\Debug\SqlServerUtilities.csprojResolveAssemblyReference.cache
+C:\Users\user\Documents\GitHub\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\obj\Debug\SqlServerUtilities.exe
+C:\Users\user\Documents\GitHub\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\obj\Debug\SqlServerUtilities.pdb
