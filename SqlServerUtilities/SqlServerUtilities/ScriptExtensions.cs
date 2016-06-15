@@ -8,8 +8,6 @@ using Microsoft.SqlServer.Management.Smo;
 
 namespace SqlServerUtilities
 {
-    pu
-
     public static class ScriptExtensions
     {
         public static ScriptingOptions GetScriptingOptions()
@@ -27,6 +25,12 @@ namespace SqlServerUtilities
             opts.NoFileGroup = true;
             return opts;
         }
+        public static string GetDeclarations()
+        {
+            string sql = "DECLARE @sql nvarchar(MAX)\n\t@params nvarchar(MAX);";
+            return sql;
+        }
+
         public static Scripter GetScriptingOptions(Server server)
         {
             Scripter scripter = new Scripter(server);

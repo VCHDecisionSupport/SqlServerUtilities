@@ -173,9 +173,35 @@ namespace SqlServerUtilities
         }
         static void test_script_extensions()
         {
-            Server server = SchemaReader.getServer("STDBDECSUP01");
-            Database database = server.Databases["DSDW"];
-            Console.WriteLine(database.ToScript());
+            Server server = SchemaReader.getServer("localhost");
+            Database src_database = server.Databases["DSDW"];
+            string dst_database_name = "DSDW2";
+            Database dst_database;
+            if (!server.Databases.Contains(dst_database_name))
+            {
+                dst_database = new Database(server, "DSDW2");
+
+                dst_database.Create();
+            }
+            else
+            {
+                dst_database = server.Databases[dst_database_name];
+            }
+
+            foreach (Table src_table in src_database.Tables)
+            {
+                Console.WriteLine(src_table.Name);
+                Table dst_table = new Table(dst_database, src_table.Schema, src_table.Name);
+                foreach (Column src_column in src_table.Columns)
+                {
+                    Column dst_column = new Column(dst_table, src_column.Name, src_column.DataType);
+                    dst_column.Nullable = src_column.Nullable;
+                    dst_column.Default = src_column.Default;
+                    dst_table.Columns.Add(dst_column);
+                }
+                dst_table.Create();
+                break;
+            }
         }
         static void Main(string[] args)
         {
@@ -186,6 +212,7 @@ namespace SqlServerUtilities
             //test_etl();
             //test_scripting();
             test_script_extensions();
+
             CommonUtils.CommonUtils.user_exit();
         }
 
