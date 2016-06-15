@@ -23,15 +23,19 @@ namespace SqlServerUtilities
             dst_server = database.Parent;
             dst_database = database;
         }
-        public SchemaWriter(Server server)
+        public SchemaWriter(Server server, string database_name)
         {
             dst_server = server;
-            dst_database = database;
+            dst_database = new Database(dst_server, database_name);
         }
         public Table AddTable(Table src_table)
         {
-
+            Table dst_table = new Table(dst_database, src_table.Name);
+            foreach (Column src_column in src_table.Columns)
+            {
+                Column dst_co
+            }
+            dst_database.Tables.Add
         }
-
     }
 }
