@@ -33,7 +33,17 @@ namespace SqlServerUtilities
             Table dst_table = new Table(dst_database, src_table.Name);
             foreach (Column src_column in src_table.Columns)
             {
-                Column dst_co
+                Column dst_column = new Column(dst_table, src_column.Name, src_column.DataType);
+                dst_column.Nullable = src_column.Nullable;
+                dst_column.Identity = src_column.Identity;
+                dst_column.Default = src_column.Default;
+                if (src_column.Identity)
+                {
+                    dst_column.IdentitySeed = src_column.IdentitySeed;
+                    dst_column.IdentityIncrement = src_column.IdentityIncrement;
+                }
+                dst_table.Columns.Add(dst_column);
+
             }
             dst_database.Tables.Add
         }
