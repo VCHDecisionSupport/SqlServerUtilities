@@ -100,7 +100,7 @@ namespace CommonUtils
         {
             Console.BufferHeight = 9999;
             Console.WindowHeight = (int)(Console.LargestWindowHeight * .5);
-            Console.BufferWidth = (int)(Console.LargestWindowWidth*.75);
+            Console.BufferWidth = Console.BufferWidth< Console.LargestWindowHeight ? (int)(Console.LargestWindowWidth*.75) : Console.BufferWidth;
             Console.WindowWidth = (int)(Console.LargestWindowWidth * .75);
         }
     }
