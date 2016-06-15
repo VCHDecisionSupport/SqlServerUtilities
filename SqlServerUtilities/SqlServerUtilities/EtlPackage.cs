@@ -50,6 +50,15 @@ namespace SqlServerUtilities
         {
             return Regex.Replace(task_name, @"[\[\]\\\.]", "", RegexOptions.None, TimeSpan.FromSeconds(1.5));
         }
+        public EtlPackage(string src_server_name, string dst_server_name, string database_name)
+        {
+            _package = new Package();
+            _package.DelayValidation = true;
+            IsSaved = false;
+            _connection_dict = new connection_dictionary();
+            package_file_name = string.Format("{0} {1}-{2}.dtsx", database_name, src_server_name, dst_server_name);
+            addDataFlowTasksBySchema(database_name, src_server_name, dst_server_name);
+        }
         public EtlPackage(string file_name)
         {
             _package = new Package();
@@ -399,7 +408,14 @@ namespace SqlServerUtilities
             return seq.Name;
 
         }
-
+        public void addDataFlowTasksBySchema(string database_name, string src_server_name, string dst_server_name)
+        {
+            Database database = SchemaReader.getDatabase(src_server_name, database_name);
+            foreach (Schema schema in database.Schemas)
+            {
+                addDataFlowTasksBySchema(database_name, schema.Name, src_server_name, dst_server_name);
+            }
+        }
         public Sequence addTruncatePopulate(Executables execs, Table src_table, Table dst_table)
         {
             Sequence seq = addSequence(execs, src_table.Name);
