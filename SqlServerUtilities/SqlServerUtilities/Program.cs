@@ -87,12 +87,12 @@ namespace SqlServerUtilities
 
             Server server = SchemaReader.getServer("STDBDECSUP01");
             Database database = server.Databases["DSDW"];
-            //Table table = database.Tables["ReferralReason", "Dim"];
+            //Table view = database_name.Tables["ReferralReason", "Dim"];
             Scripter scripter = new Scripter(server);
             scripter.Options = opts;
-            //foreach (Table table in database.Tables)
+            //foreach (Table view in database_name.Tables)
             //{
-            //    StringCollection str_col = scripter.Script(new Urn[] { table.Urn });
+            //    StringCollection str_col = scripter.Script(new Urn[] { view.Urn });
             //    foreach (string sql in str_col)
             //    {
             //        Console.WriteLine(sql);
@@ -100,7 +100,7 @@ namespace SqlServerUtilities
             //    break;
             //}
 
-            //foreach (StoredProcedure proc in database.StoredProcedures)
+            //foreach (StoredProcedure proc in database_name.StoredProcedures)
             //{
             //    StringCollection str_col = scripter.Script(new Urn[] { proc.Urn });
             //    foreach (string sql in str_col)
@@ -117,7 +117,7 @@ namespace SqlServerUtilities
                 SqlSmoObject smo_obj = obj as SqlSmoObject;
                 Schema sch = smo_obj as Schema;
                 break;
-                //StringCollection str_col = scripter.Script(database.Schemas.GetEnumerator().Current);
+                //StringCollection str_col = scripter.Script(database_name.Schemas.GetEnumerator().Current);
                 //foreach (string sql in str_col)
                 //{
                 //    Console.WriteLine(sql);
@@ -203,6 +203,14 @@ namespace SqlServerUtilities
                 break;
             }
         }
+        static void test_SchemaWriter()
+        {
+            SchemaWriter wrtr = new SchemaWriter("STDBDECSUP01", "ShellDSDW");
+            Table src_table = SchemaReader.getTable("STDBDECSUP01", "DSDW", "Dim", "Date");
+            wrtr.AddTable(src_table);
+            string ddl= wrtr.CreateAll();
+            Console.WriteLine(ddl);
+        }
         static void Main(string[] args)
         {
             CommonUtils.CommonUtils.preExecutionSetup();
@@ -211,8 +219,8 @@ namespace SqlServerUtilities
             //createEtlFromExcel();
             //test_etl();
             //test_scripting();
-            test_script_extensions();
-
+            //test_script_extensions();
+            test_SchemaWriter();
             CommonUtils.CommonUtils.user_exit();
         }
 

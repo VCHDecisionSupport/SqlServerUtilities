@@ -116,16 +116,16 @@ namespace SqlServerUtilities
                 _connection_dict.Add(connection_name, connection_string);
                 return connection_name;
             }
-            ////cleanSsisTaskName(database) + "-" + cleanSsisTaskName(database);
+            ////cleanSsisTaskName(database_name) + "-" + cleanSsisTaskName(database_name);
 
-            ////= string.Format("{0}-{1}", cleanSsisTaskName(server), cleanSsisTaskName(database));
+            ////= string.Format("{0}-{1}", cleanSsisTaskName(server_name), cleanSsisTaskName(database_name));
             //ConnectionManager newConnectionManager = null;
             //foreach (ConnectionManager connection in _package.Connections)
             //{
             //    //string connection_string = connection.ConnectionString;
             //    //Match regex_match = connection_string_regex.Match(connection_string);
             //    ////Console.WriteLine(string.Format("{0}{1}", regex_match.Groups["server_name"].Value, regex_match.Groups["database_name"].Value));
-            //    //if (regex_match.Success && regex_match.Groups["server_name"].Value == server && regex_match.Groups["database_name"].Value == database)
+            //    //if (regex_match.Success && regex_match.Groups["server_name"].Value == server_name && regex_match.Groups["database_name"].Value == database_name)
             //    //{
             //    //    connection_name = connection.Name;
             //    //    return connection.Name;
@@ -138,7 +138,7 @@ namespace SqlServerUtilities
             //if (connection_name == null)
             //{
             //    Console.WriteLine("heelo");
-            //    connection_name = string.Format("{0}-{1}", cleanSsisTaskName(server), cleanSsisTaskName(database));
+            //    connection_name = string.Format("{0}-{1}", cleanSsisTaskName(server_name), cleanSsisTaskName(database_name));
             //    Console.WriteLine(string.Format("loop finished: connection does not exist: {0}", connection_name));
             //    Console.WriteLine(string.Format("attempting to add new connection: {0}", connection_name));
             //    newConnectionManager = _package.Connections.Add("OLEDB");
@@ -146,7 +146,7 @@ namespace SqlServerUtilities
             //    string confmt = "Data Source={0};" +
             //      "Initial Catalog={1};Provider=SQLOLEDB.1;" +
             //      "Integrated Security=SSPI;";
-            //    newConnectionManager.ConnectionString = string.Format(confmt, server, database);
+            //    newConnectionManager.ConnectionString = string.Format(confmt, server_name, database_name);
             //    return connection_name;
             //}
             //return connection_name;
@@ -219,12 +219,12 @@ namespace SqlServerUtilities
             //{
             //    System.Console.WriteLine("connection manager: {0}", con.Name);
             //}
-            // Set the custom properties: source table query and access mode
+            // Set the custom properties: source view query and access mode
             source_component_wrapper.SetComponentProperty("AccessMode", 2);
             string src_query = string.Format("SELECT * FROM [{0}].[{1}];", src_table.Schema, src_table.Name);
             Console.WriteLine(src_query);
             source_component_wrapper.SetComponentProperty("SqlCommand", src_query);
-            // Connect to the data source table
+            // Connect to the data source view
             source_component_wrapper.AcquireConnections(null);
             // Reinitialize the metadata.
             source_component_wrapper.ReinitializeMetaData();
@@ -257,12 +257,12 @@ namespace SqlServerUtilities
             //{
             //    System.Console.WriteLine("connection manager: {0}", con.Name);
             //}
-            // Set the custom properties: destination table and access mode
+            // Set the custom properties: destination view and access mode
             destination_component_wrapper.SetComponentProperty("AccessMode", 3);
             string dst_table_str = string.Format("[{0}].[{1}]", dst_table.Schema, dst_table.Name);
             //Console.WriteLine("{0} dst_table_str", dst_table_str);
             destination_component_wrapper.SetComponentProperty("OpenRowset", dst_table_str);
-            // Connect to the data destination table
+            // Connect to the data destination view
             destination_component_wrapper.AcquireConnections(null);
             // Reinitialize the metadata.
             destination_component_wrapper.ReinitializeMetaData();
@@ -286,7 +286,7 @@ namespace SqlServerUtilities
                 // Call the SetUsageType method of the destination_component to add each available virtual input column as an input column.
                 IDTSInputColumn100 vCol = destination_component_wrapper.SetUsageType(input.ID, vInput, vColumn.LineageID, DTSUsageType.UT_READONLY);
 
-                // check if the column match exists in the destination_component table 
+                // check if the column match exists in the destination_component view 
                 string cinputColumnName = vColumn.Name;
                 var columnExist = (from item in input.ExternalMetadataColumnCollection.Cast<IDTSExternalMetadataColumn100>()
                                    where item.Name == cinputColumnName && item.DataType == vColumn.DataType
