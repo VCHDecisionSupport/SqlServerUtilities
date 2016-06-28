@@ -82,31 +82,23 @@ GO
             get
             {
                 string sql = @"
---#region CREATE DATABASE
-USE master
+--#region CREATE SCHEMA
+USE <dst_database_name,,>
 GO
 
 DECLARE @name nvarchar(max);
 DECLARE @sql nvarchar(max);
 
-SET @name = '<dst_database_name,,>';
-SET @sql = FORMATMESSAGE('CREATE DATABASE %s;', @name);
+SET @name = '<dst_object_name,,>';
+SET @sql = FORMATMESSAGE('CREATE SCHEMA %s;',@name);
 
-IF DB_ID(@name) IS NULL
+IF SCHEMA_ID(@name) IS NULL
 BEGIN
-	IF EXISTS(SELECT * FROM sys.master_files WHERE name = @name)
-	BEGIN
-        RAISERROR('ERROR: database file %s already exists', 11, 1, @name) WITH NOWAIT;
-		SELECT DB_NAME(database_id) AS database_name, * FROM sys.master_files WHERE name = @name
-	END
-	ELSE
-	BEGIN
-		RAISERROR(@sql, 0, 10) WITH NOWAIT;
-        EXEC(@sql);
-	END
+	RAISERROR(@sql, 0, 0) WITH NOWAIT;
+	EXEC(@sql);
 END
 GO
---#endregion CREATE DATABASE
+--#endregion CREATE SCHEMA
 ";
                 return sql;
             }
@@ -238,7 +230,7 @@ GO
         {
             // if exists then drop GO CREATE
             string ddl = GetTableDdl.Replace(GetDatabaseNamePattern, table.Parent.Name);
-            ddl = ddl.Replace(GetTableNamePattern, table.GetSchemaTableName());
+            ddl = ddl.Replace(GetTableNamePattern, table.GetSchemaObjectName());
             Scripter scripter = GetScripter(table.Parent.Parent);
             ddl = ddl.Replace(GetScripterPattern, scripter.Script(new SqlSmoObject[] { table as SqlSmoObject }).AsString());
             return ddl;
@@ -248,9 +240,9 @@ GO
 
             // if DNE then create placeholder GO ALTER
             string ddl = GetProcDdl.Replace(GetDatabaseNamePattern, proc.Parent.Name);
-            ddl = ddl.Replace(GetTableNamePattern, table.GetSchemaTableName());
-            Scripter scripter = GetScripter(table.Parent.Parent);
-            ddl = ddl.Replace(GetScripterPattern, scripter.Script(new SqlSmoObject[] { table as SqlSmoObject }).AsString());
+            ddl = ddl.Replace(GetTableNamePattern, proc.GetSchemaObjectName())  ;
+            Scripter scripter = GetScripter(proc.Parent.Parent);
+            ddl = ddl.Replace(GetScripterPattern, scripter.Script(new SqlSmoObject[] { proc as SqlSmoObject }).AsString());
             return ddl;
         }
         public static string ToScript(this View view)

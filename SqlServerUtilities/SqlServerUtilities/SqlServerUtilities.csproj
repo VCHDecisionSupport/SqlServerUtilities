@@ -69,6 +69,7 @@
     <Compile Include="SchemaReader.cs" />
     <Compile Include="SchemaWriter.cs" />
     <Compile Include="ScriptExtensions.cs" />
+    <Compile Include="ScriptWriter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

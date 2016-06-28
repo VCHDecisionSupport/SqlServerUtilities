@@ -211,6 +211,11 @@ namespace SqlServerUtilities
             string ddl= wrtr.CreateAll();
             Console.WriteLine(ddl);
         }
+        static void test_ScriptWriter()
+        {
+            Database database = SchemaReader.getDatabase("localhost", "DSDW");
+            ScriptWriter.GetIfExists(database, "Dim.Date", "U");
+        }
         static void Main(string[] args)
         {
             CommonUtils.CommonUtils.preExecutionSetup();
@@ -220,7 +225,7 @@ namespace SqlServerUtilities
             //test_etl();
             //test_scripting();
             //test_script_extensions();
-            test_SchemaWriter();
+            test_ScriptWriter();
             CommonUtils.CommonUtils.user_exit();
         }
 
