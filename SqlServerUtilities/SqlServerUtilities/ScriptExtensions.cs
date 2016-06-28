@@ -34,6 +34,31 @@ namespace SqlServerUtilities
                 return pattern;
             }
         }
+        private static string GetProcNamePattern
+        {
+            get
+            {
+                string pattern = @"<dst_proc_name,,>";
+                return pattern;
+            }
+        }
+        private static string GetViewNamePattern
+        {
+            get
+            {
+                string pattern = @"<dst_view_name,,>";
+                return pattern;
+            }
+        }
+        private static string GetViewNamePattern
+        {
+            get
+            {
+                string pattern = @"<dst_view_name,,>";
+                return pattern;
+            }
+        }
+        
         private static string GetScripterPattern
         {
             get
@@ -167,6 +192,65 @@ GO
                 return sql;
             }
         }
+        private static string GetViewDdl
+        {
+            get
+            {
+                string sql = @"
+--#region CREATE/ALTER VIEW
+USE <dst_database_name,,>
+GO
+
+DECLARE @name nvarchar(max);
+DECLARE @sql nvarchar(max);
+
+SET @name = '<dst_view_name,,>';
+SET @sql = FORMATMESSAGE('CREATE VIEW %s AS SELECT 1 AS [one];',@name);
+
+IF OBJECT_ID(@name,'V') IS NULL
+BEGIN
+	RAISERROR(@sql, 0, 0) WITH NOWAIT;
+	EXEC(@sql);
+END
+
+<scripter,,>
+GO
+--#endregion CREATE/ALTER VIEW
+";
+                return sql;
+            }
+        }
+        private static string GetFuncTableDdl
+        {
+            get
+            {
+                string sql = @"
+--#region CREATE/ALTER TABLE FUNC
+USE <dst_database_name,,>
+GO
+
+DECLARE @name nvarchar(max);
+DECLARE @sql nvarchar(max);
+
+SET @name = '<dst_table_func_name,,>';
+SET @sql = FORMATMESSAGE('CREATE FUNC %s() RETURNS TABLE AS BEGIN RETURN SELECT 1 AS [one] END;',@name);
+
+IF OBJECT_ID(@name,'IF') IS NULL
+BEGIN
+	RAISERROR(@sql, 0, 0) WITH NOWAIT;
+	EXEC(@sql);
+END
+
+ALTER FUNCTION <dst_table_func_name,,>
+AS
+	<function_definition,,>
+;
+GO
+--#endregion CREATE/ALTER TABLE FUNC
+";
+                return sql;
+            }
+        }
 
 
         public static ScriptingOptions GetScriptingOptions()
@@ -238,30 +322,43 @@ GO
         {
             // if exists then drop GO CREATE
             string ddl = GetTableDdl.Replace(GetDatabaseNamePattern, table.Parent.Name);
-            ddl = ddl.Replace(GetTableNamePattern, table.GetSchemaTableName());
+            ddl = ddl.Replace(GetTableNamePattern, table.GetSchemaObjectName());
             Scripter scripter = GetScripter(table.Parent.Parent);
             ddl = ddl.Replace(GetScripterPattern, scripter.Script(new SqlSmoObject[] { table as SqlSmoObject }).AsString());
             return ddl;
         }
         public static string ToScript(this StoredProcedure proc)
         {
-
             // if DNE then create placeholder GO ALTER
             string ddl = GetProcDdl.Replace(GetDatabaseNamePattern, proc.Parent.Name);
-            ddl = ddl.Replace(GetTableNamePattern, table.GetSchemaTableName());
-            Scripter scripter = GetScripter(table.Parent.Parent);
-            ddl = ddl.Replace(GetScripterPattern, scripter.Script(new SqlSmoObject[] { table as SqlSmoObject }).AsString());
+            ddl = ddl.Replace(GetProcNamePattern, proc.GetSchemaObjectName());
+            Scripter scripter = GetScripter(proc.Parent.Parent);
+            ddl = ddl.Replace(GetScripterPattern, scripter.Script(new SqlSmoObject[] { proc as SqlSmoObject }).AsString());
             return ddl;
         }
         public static string ToScript(this View view)
         {
-
             // if DNE then create placeholder GO ALTER
-            return string.Format("USE {0}\nGO\nIF OBJECT_ID('{1}.{2}','V') IS NULL \nBEGIN\n\tDECLARE @sql varchar(max);\n\tSET @sql = 'CREATE VIEW {1}.{2} AS SELECT 1 AS one;';\n\tPRINT @sql;\n\tEXEC(@sql);\nEND\nGO\n\n\n", view.Parent.Name, view.Schema, view.Name);
+            string ddl = GetProcDdl.Replace(GetDatabaseNamePattern, view.Parent.Name);
+            ddl = ddl.Replace(GetViewNamePattern, view.GetSchemaObjectName());
+            Scripter scripter = GetScripter(view.Parent.Parent);
+            ddl = ddl.Replace(GetScripterPattern, scripter.Script(new SqlSmoObject[] { view as SqlSmoObject }).AsString());
+            return ddl;
         }
         public static string ToScript(this UserDefinedFunction func)
         {
+            if (func.FunctionType == UserDefinedFunctionType.Scalar)
+            {
+                
+            }
+            else if (func.FunctionType == UserDefinedFunctionType.Table)
+            {
 
+            }
+            else
+            {
+                Console.WriteLine(string.Format("{0} has type {1}",func.GetSchemaObjectName(), func.FunctionType.ToString()));
+            }
             // if DNE then create placeholder GO ALTER
             return string.Format("USE {0}\nGO\n\n\nIF OBJECT_ID('{1}.{2}','FN') IS NULL\nBEGIN\n\tSET @sql = 'CREATE FUNCTION {1}.{2}() RETURNS INT BEGIN RETURN 0 END;';\n\tPRINT @sql;\n\tEXEC(@sql);\nEND\nGO\n\n\n", func.Parent.Name, func.Schema, func.Name);
         }
