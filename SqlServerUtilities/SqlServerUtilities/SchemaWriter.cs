@@ -12,6 +12,12 @@ namespace SqlServerUtilities
     {
         public Database dst_database { get; private set; }
         public Server dst_server { get; private set; }
+        /// <summary>
+        /// dst_database, dst_server given.
+        /// objects will be created on server and database
+        /// </summary>
+        /// <param name="server"></param>
+        /// <param name="database"></param>
         public SchemaWriter(Server server, Database database)
         {
             dst_server = server;
