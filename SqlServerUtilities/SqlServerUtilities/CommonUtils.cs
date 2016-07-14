@@ -5,7 +5,7 @@ using System.Text;
 
 namespace CommonUtils
 {
-    class CommonUtils
+    public static class CommonUtils
     {
         public enum PostExecutionSteps
         {
@@ -100,8 +100,17 @@ namespace CommonUtils
         {
             Console.BufferHeight = 9999;
             Console.WindowHeight = (int)(Console.LargestWindowHeight * .5);
-            Console.BufferWidth = (int)(Console.LargestWindowWidth*.75);
+            Console.BufferWidth = Console.BufferWidth< Console.LargestWindowHeight ? (int)(Console.LargestWindowWidth*.75) : Console.BufferWidth;
             Console.WindowWidth = (int)(Console.LargestWindowWidth * .75);
         }
+        public static void Print(this string input, int indent)
+        {
+            Console.WriteLine(string.Format("{0}", input));
+        }
+        public static void Print(this string input)
+        {
+            input.Print(0);
+        }
+        
     }
 }

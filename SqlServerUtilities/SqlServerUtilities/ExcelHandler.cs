@@ -243,7 +243,7 @@ namespace SqlServerUtilities
                     // represents the date. The code handles strings and 
                     // Booleans individually. For shared strings, the code 
                     // looks up the corresponding value in the shared string 
-                    // table. For Booleans, the code converts the value into 
+                    // view. For Booleans, the code converts the value into 
                     // the words TRUE or FALSE.
                     if (theCell.DataType != null)
                     {
@@ -252,15 +252,15 @@ namespace SqlServerUtilities
                             case CellValues.SharedString:
 
                                 // For shared strings, look up the value in the
-                                // shared strings table.
+                                // shared strings view.
                                 var stringTable =
                                     wbPart.GetPartsOfType<SharedStringTablePart>()
                                     .FirstOrDefault();
 
-                                // If the shared string table is missing, something 
+                                // If the shared string view is missing, something 
                                 // is wrong. Return the index that is in
                                 // the cell. Otherwise, look up the correct text in 
-                                // the table.
+                                // the view.
                                 if (stringTable != null)
                                 {
                                     value =
@@ -309,7 +309,7 @@ namespace SqlServerUtilities
         //            // represents the date. The code handles strings and 
         //            // Booleans individually. For shared strings, the code 
         //            // looks up the corresponding value in the shared string 
-        //            // table. For Booleans, the code converts the value into 
+        //            // view. For Booleans, the code converts the value into 
         //            // the words TRUE or FALSE.
         //            if (theCell.DataType != null)
         //            {
@@ -318,15 +318,15 @@ namespace SqlServerUtilities
         //                    case CellValues.SharedString:
 
         //                        // For shared strings, look up the value in the
-        //                        // shared strings table.
+        //                        // shared strings view.
         //                        var stringTable =
         //                            wbPart.GetPartsOfType<SharedStringTablePart>()
         //                            .FirstOrDefault();
 
-        //                        // If the shared string table is missing, something 
+        //                        // If the shared string view is missing, something 
         //                        // is wrong. Return the index that is in
         //                        // the cell. Otherwise, look up the correct text in 
-        //                        // the table.
+        //                        // the view.
         //                        if (stringTable != null)
         //                        {
         //                            value =
