@@ -50,14 +50,7 @@ namespace SqlServerUtilities
                 return pattern;
             }
         }
-        private static string GetViewNamePattern
-        {
-            get
-            {
-                string pattern = @"<dst_view_name,,>";
-                return pattern;
-            }
-        }
+
         
         private static string GetScripterPattern
         {

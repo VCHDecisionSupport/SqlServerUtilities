@@ -14,3 +14,17 @@ C:\Users\user\Documents\GitHub\SqlServerUtilities\SqlServerUtilities\SqlServerUt
 C:\Users\user\Documents\GitHub\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\obj\Debug\SqlServerUtilities.csprojResolveAssemblyReference.cache
 C:\Users\user\Documents\GitHub\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\obj\Debug\SqlServerUtilities.exe
 C:\Users\user\Documents\GitHub\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\obj\Debug\SqlServerUtilities.pdb
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\DocumentFormat.OpenXml.dll
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.ConnectionInfo.dll
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.ConnectionInfoExtended.dll
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SQLServer.ManagedDTS.dll
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.Management.Sdk.Sfc.dll
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.PipelineHost.dll
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.Smo.dll
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.SmoExtended.dll
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.SqlEnum.dll
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.Dmf.dll
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.ServiceBrokerEnum.dll
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.RegSvrEnum.dll
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.SQLTaskConnectionsWrap.dll
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\DocumentFormat.OpenXml.xml

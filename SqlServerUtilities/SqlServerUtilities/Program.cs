@@ -39,18 +39,44 @@ namespace SqlServerUtilities
             pkg.addDataFlowTasksBySchema("DSDW", "Community", src_server, dst_server);
             pkg.addDataFlowTasksBySchema("DSDW", "Dim", src_server, dst_server);
             pkg.savePackage();
-            
-            
+
+
             dst_server = "STDBDECSUP01";
             src_server = "STDBDECSUP02";
             pkg = new EtlPackage(string.Format("CommunityMart {0}-{1}.dtsx", src_server, dst_server));
             pkg.addDataFlowTasksBySchema("CommunityMart", "dbo", src_server, dst_server);
             pkg.addDataFlowTasksBySchema("CommunityMart", "Dim", src_server, dst_server);
             pkg.savePackage();
-            
+
             pkg = new EtlPackage(string.Format("DSDW {0}-{1}.dtsx", src_server, dst_server));
             pkg.addDataFlowTasksBySchema("DSDW", "Community", src_server, dst_server);
             pkg.addDataFlowTasksBySchema("DSDW", "Dim", src_server, dst_server);
+            pkg.savePackage();
+        }
+        static void dataRequestSnapShot()
+        {
+            string src_server;
+            string dst_server;
+            EtlPackage pkg;
+
+            dst_server = "STDBDECSUP01";
+            src_server = "SPDBDECSUP04";
+            pkg = new EtlPackage(string.Format("DataRequest {0}-{1}.dtsx", src_server, dst_server));
+            pkg.addDataFlowTasksBySchema("DataRequest", "dbo", src_server, dst_server);
+            pkg.addDataFlowTasksBySchema("DataRequest", "Dim", src_server, dst_server);
+            pkg.savePackage();
+        }
+        static void communityMartSnapShot()
+        {
+            string src_server;
+            string dst_server;
+            EtlPackage pkg;
+            string databaseName = 'CommunityMart'
+            dst_server = "STDBDECSUP01";
+            src_server = "SPDBDECSUP04";
+            pkg = new EtlPackage(string.Format("{0} {1}-{2}.dtsx", databaseName, src_server, dst_server));
+            pkg.addDataFlowTasksBySchema(databaseName, "dbo", src_server, dst_server);
+            pkg.addDataFlowTasksBySchema(databaseName, "Dim", src_server, dst_server);
             pkg.savePackage();
         }
         static void test_etl()
@@ -225,7 +251,8 @@ namespace SqlServerUtilities
             //test_etl();
             //test_scripting();
             //test_script_extensions();
-            test_ScriptWriter();
+            //test_ScriptWriter();
+            communityMartSnapShot();
             CommonUtils.CommonUtils.user_exit();
         }
 
