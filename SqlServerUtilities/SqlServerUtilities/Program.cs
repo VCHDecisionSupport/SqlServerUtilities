@@ -9,9 +9,65 @@ using System.Threading.Tasks;
 using Microsoft.SqlServer.Management.Smo;
 using Microsoft.SqlServer.Management.Sdk.Sfc;
 using Microsoft.SqlServer.Dts.Runtime;
+using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace SqlServerUtilities
 {
+    internal class SQLVisitor : TSqlFragmentVisitor
+    {
+        private int SELECTcount = 0;
+        private int INSERTcount = 0;
+        private int UPDATEcount = 0;
+        private int DELETEcount = 0;
+
+
+        private string GetNodeTokenText(TSqlFragment fragment)
+        {
+            StringBuilder tokenText = new StringBuilder();
+            for (int counter = fragment.FirstTokenIndex; counter <= fragment.LastTokenIndex; counter++)
+            {
+                tokenText.Append(fragment.ScriptTokenStream[counter].Text);
+            }
+            return tokenText.ToString();
+        }
+
+        // SELECTs 
+        public override void ExplicitVisit(SelectStatement node)
+        {
+            Console.WriteLine("found SELECT statement with text: " + GetNodeTokenText(node));
+            SELECTcount++;
+        }
+        // SELECTs 
+        public override void ExplicitVisit(OutputIntoClause node)
+        {
+            Console.WriteLine("found OutputIntoClause statement with text: " + GetNodeTokenText(node));
+            //SELECTcount++;
+        }
+        // INSERTs 
+        public override void ExplicitVisit(InsertStatement node)
+        {
+            INSERTcount++;
+        }
+        // UPDATEs 
+        public override void ExplicitVisit(UpdateStatement node)
+        {
+            UPDATEcount++;
+        }
+        // DELETEs 
+        public override void ExplicitVisit(DeleteStatement node)
+        {
+            DELETEcount++;
+        }
+        public void DumpStatistics()
+        {
+            Console.WriteLine(string.Format("Found {0} SELECTs, {1} INSERTs, {2} UPDATEs & {3} DELETEs",
+                this.SELECTcount,
+                this.INSERTcount,
+                this.UPDATEcount,
+                this.DELETEcount));
+        }
+    }
+
     class Program
     {
         static void ssis_foo()
@@ -308,6 +364,22 @@ namespace SqlServerUtilities
             CommonUtils.CommonUtils.extractDatabaseName(@"Data Source = STDBDECSUP01; Initial Catalog = CommunityMart; Provider = SQLOLEDB.1; Integrated Security = SSPI;");
 
         }
+
+        static void script_dom()
+        {
+            string scriptPath = Path.Combine(CommonUtils.CommonUtils.cwd(), "TestScript.sql");
+            TextReader txtRdr = new StreamReader(scriptPath);
+            TSql110Parser parser = new TSql110Parser(true);
+            IList<ParseError> errors;
+            TSqlFragment sqlFragment = parser.Parse(txtRdr, out errors);
+
+            SQLVisitor myVisitor = new SQLVisitor();
+            sqlFragment.Accept(myVisitor);
+
+
+            myVisitor.DumpStatistics();
+
+        }
         static void Main(string[] args)
         {
             CommonUtils.CommonUtils.preExecutionSetup();
@@ -320,8 +392,9 @@ namespace SqlServerUtilities
             //test_ScriptWriter();
             //communityMartSnapShot();
             //browseMsdb();
-            test_MsdbReader();
+            //test_MsdbReader();
             //test_GetConnectionStringDatabase();
+            script_dom();
             CommonUtils.CommonUtils.user_exit();
         }
 
