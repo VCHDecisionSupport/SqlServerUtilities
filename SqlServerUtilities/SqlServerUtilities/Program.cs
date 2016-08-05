@@ -1,12 +1,14 @@
 ﻿
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.SqlServer.Management.Smo;
-using Microsoft.SqlServer.Management.Sdk.Sfc;  
+using Microsoft.SqlServer.Management.Sdk.Sfc;
+using Microsoft.SqlServer.Dts.Runtime;
 
 namespace SqlServerUtilities
 {
@@ -71,7 +73,7 @@ namespace SqlServerUtilities
             string src_server;
             string dst_server;
             EtlPackage pkg;
-            string databaseName = 'CommunityMart'
+            string databaseName = "CommunityMart";
             dst_server = "STDBDECSUP01";
             src_server = "SPDBDECSUP04";
             pkg = new EtlPackage(string.Format("{0} {1}-{2}.dtsx", databaseName, src_server, dst_server));
@@ -242,6 +244,70 @@ namespace SqlServerUtilities
             Database database = SchemaReader.getDatabase("localhost", "DSDW");
             ScriptWriter.GetIfExists(database, "Dim.Date", "U");
         }
+        static void browseMsdb()
+        {
+            string sqlFolder;
+            string sqlServer;
+
+            Application ssisApplication;
+            PackageInfos sqlPackages;
+
+            sqlServer = "STDBDECSUP01";
+
+            ssisApplication = new Application();
+
+            // Get packages stored in MSDB.    
+            sqlFolder = "MSDB";
+            sqlPackages = ssisApplication.GetDtsServerPackageInfos(sqlFolder, sqlServer);
+            if (sqlPackages.Count > 0)
+            {
+                Console.WriteLine("Packages stored in MSDB:");
+                foreach (PackageInfo sqlPackage in sqlPackages)
+                {
+                    Console.WriteLine(sqlPackage.Name);
+                    string folderPath = Path.Combine(sqlFolder, sqlPackage.Name);
+                    if (ssisApplication.FolderExistsOnDtsServer(folderPath, sqlServer))
+                    {
+                        Console.WriteLine(string.Format("{0} is a folder", folderPath));
+                    }
+                }
+                Console.WriteLine();
+            }
+
+            // Get packages stored in the File System.    
+            sqlFolder = "File System";
+            sqlPackages = ssisApplication.GetDtsServerPackageInfos(sqlFolder, sqlServer);
+            if (sqlPackages.Count > 0)
+            {
+                Console.WriteLine("Packages stored in the File System:");
+                foreach (PackageInfo sqlPackage in sqlPackages)
+                {
+                    Console.WriteLine(sqlPackage.Name);
+                }
+            }
+
+            Console.Read();
+
+        }
+        static void test_MsdbReader()
+        {
+            MsdbReader rdr = new MsdbReader("STDBDECSUP01", "MSDB");
+            rdr.BreadthFirstCrawl();
+            foreach (string key in rdr.PkgTablePairs.Keys)
+            {
+                Console.WriteLine(string.Format("Package Name: {0}\n\tTable Names:", key));
+                foreach (string value in rdr.PkgTablePairs[key])
+                {
+                    Console.WriteLine(string.Format("\t{0}", value));
+                }
+            }
+            rdr.SaveToSqlScript();
+        }
+        static void test_GetConnectionStringDatabase()
+        {
+            CommonUtils.CommonUtils.extractDatabaseName(@"Data Source = STDBDECSUP01; Initial Catalog = CommunityMart; Provider = SQLOLEDB.1; Integrated Security = SSPI;");
+
+        }
         static void Main(string[] args)
         {
             CommonUtils.CommonUtils.preExecutionSetup();
@@ -252,7 +318,10 @@ namespace SqlServerUtilities
             //test_scripting();
             //test_script_extensions();
             //test_ScriptWriter();
-            communityMartSnapShot();
+            //communityMartSnapShot();
+            //browseMsdb();
+            test_MsdbReader();
+            //test_GetConnectionStringDatabase();
             CommonUtils.CommonUtils.user_exit();
         }
 

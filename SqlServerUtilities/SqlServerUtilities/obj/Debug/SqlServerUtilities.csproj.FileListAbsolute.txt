@@ -28,3 +28,7 @@ C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServ
 C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.RegSvrEnum.dll
 C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.SQLTaskConnectionsWrap.dll
 C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\DocumentFormat.OpenXml.xml
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.BulkInsertTask.dll
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.FileSystemTask.dll
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.SendMailTask.dll
+C:\Users\gcrowell\Documents\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.ManagedConnections.dll
