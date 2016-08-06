@@ -54,3 +54,4 @@ Temporary Items
 *.manifest
 *.suo
 *.cache
+*.dll
