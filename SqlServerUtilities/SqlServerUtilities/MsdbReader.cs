@@ -12,12 +12,14 @@ namespace SqlServerUtilities
     {
         string serverName { get; set; }
         string rootDtsFolder { get; set; }
+        string outfile { get; set; }
         Application ssisApplication { get; set; }
         public Dictionary<string, List<string>> PkgTablePairs { get; set; }
         public MsdbReader()
         {
             this.serverName = "STDBDECSUP01";
             this.rootDtsFolder = "MSDB";
+            this.outfile = Path.Combine(CommonUtils.CommonUtils.cwd(), string.Format("PkgTableMapping_{0}_{1}.sql", serverName, rootDtsFolder));
             ssisApplication = new Application();
 
         }
@@ -25,12 +27,14 @@ namespace SqlServerUtilities
         {
             this.serverName = serverName;
             this.rootDtsFolder = "MSDB";
+            this.outfile = Path.Combine(CommonUtils.CommonUtils.cwd(), string.Format("PkgTableMapping_{0}_{1}.sql", serverName, rootDtsFolder));
             ssisApplication = new Application();
         }
         public MsdbReader(string serverName, string rootDtsFolder)
         {
             this.serverName = serverName;
             this.rootDtsFolder = rootDtsFolder;
+            this.outfile = Path.Combine(CommonUtils.CommonUtils.cwd(), string.Format("PkgTableMapping_{0}_{1}.sql", serverName, rootDtsFolder));
             ssisApplication = new Application();
         }
         public void BreadthFirstCrawl()
@@ -89,19 +93,27 @@ namespace SqlServerUtilities
                 Console.WriteLine();
             }
         }
+
         public void SaveToSqlScript()
         {
-            string pout = Path.Combine(CommonUtils.CommonUtils.cwd(),"DataLineage.sql");
-            StreamWriter fout = new StreamWriter(pout);
+            SaveToSqlScript("tab");
+        }
+        public void SaveToSqlScript(string destinationTableName)
+        {
+            StreamWriter fout = new StreamWriter(this.outfile);
             foreach (string key in PkgTablePairs.Keys)
             {
                 foreach (string value in PkgTablePairs[key])
                 {
-                    string sql = string.Format("INSERT INTO tab VALUES ('{0}','{1}')", key, value);
+                    string tableName = value;
+                    tableName = tableName.Replace("[", "");
+                    tableName = tableName.Replace("]", "");
+                    string sql = string.Format("INSERT INTO {2} VALUES ('{0}','{1}')", key, tableName, destinationTableName);
                     fout.WriteLine(sql);
                 }
             }
             fout.Close();
         }
+
     }
 }

@@ -10,6 +10,7 @@ using Microsoft.SqlServer.Management.Smo;
 using Microsoft.SqlServer.Management.Sdk.Sfc;
 using Microsoft.SqlServer.Dts.Runtime;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System.Diagnostics;
 
 namespace SqlServerUtilities
 {
@@ -347,7 +348,9 @@ namespace SqlServerUtilities
         }
         static void test_MsdbReader()
         {
-            MsdbReader rdr = new MsdbReader("STDBDECSUP01", "MSDB");
+            string server = "STDBDECSUP01";
+            string database = "MSDB";
+            MsdbReader rdr = new MsdbReader(server, database);
             rdr.BreadthFirstCrawl();
             foreach (string key in rdr.PkgTablePairs.Keys)
             {
@@ -382,6 +385,8 @@ namespace SqlServerUtilities
         }
         static void Main(string[] args)
         {
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
             CommonUtils.CommonUtils.preExecutionSetup();
             //ssis_foo();
             //createEtl();
@@ -394,7 +399,18 @@ namespace SqlServerUtilities
             //browseMsdb();
             //test_MsdbReader();
             //test_GetConnectionStringDatabase();
-            script_dom();
+            //script_dom();
+            communityMartSnapShot();
+           
+            stopWatch.Stop();
+            // Get the elapsed time as a TimeSpan value.
+            TimeSpan ts = stopWatch.Elapsed;
+
+            // Format and display the TimeSpan value.
+            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+                ts.Hours, ts.Minutes, ts.Seconds,
+                ts.Milliseconds / 10);
+            Console.WriteLine("RunTime " + elapsedTime);
             CommonUtils.CommonUtils.user_exit();
         }
 
