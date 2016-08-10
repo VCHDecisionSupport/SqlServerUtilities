@@ -15,7 +15,7 @@ namespace SqlServerUtilities
             switch (type)
             {
                 case "U":
-                    string.Format("")
+                    //string.Format("")
                     "Table".Print();
                     break;
                 case "V":

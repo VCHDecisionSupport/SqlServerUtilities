@@ -1,15 +1,74 @@
 ﻿
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.SqlServer.Management.Smo;
-using Microsoft.SqlServer.Management.Sdk.Sfc;  
+using Microsoft.SqlServer.Management.Sdk.Sfc;
+using Microsoft.SqlServer.Dts.Runtime;
+using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System.Diagnostics;
 
 namespace SqlServerUtilities
 {
+    internal class SQLVisitor : TSqlFragmentVisitor
+    {
+        private int SELECTcount = 0;
+        private int INSERTcount = 0;
+        private int UPDATEcount = 0;
+        private int DELETEcount = 0;
+
+
+        private string GetNodeTokenText(TSqlFragment fragment)
+        {
+            StringBuilder tokenText = new StringBuilder();
+            for (int counter = fragment.FirstTokenIndex; counter <= fragment.LastTokenIndex; counter++)
+            {
+                tokenText.Append(fragment.ScriptTokenStream[counter].Text);
+            }
+            return tokenText.ToString();
+        }
+
+        // SELECTs 
+        public override void ExplicitVisit(SelectStatement node)
+        {
+            Console.WriteLine("found SELECT statement with text: " + GetNodeTokenText(node));
+            SELECTcount++;
+        }
+        // SELECTs 
+        public override void ExplicitVisit(OutputIntoClause node)
+        {
+            Console.WriteLine("found OutputIntoClause statement with text: " + GetNodeTokenText(node));
+            //SELECTcount++;
+        }
+        // INSERTs 
+        public override void ExplicitVisit(InsertStatement node)
+        {
+            INSERTcount++;
+        }
+        // UPDATEs 
+        public override void ExplicitVisit(UpdateStatement node)
+        {
+            UPDATEcount++;
+        }
+        // DELETEs 
+        public override void ExplicitVisit(DeleteStatement node)
+        {
+            DELETEcount++;
+        }
+        public void DumpStatistics()
+        {
+            Console.WriteLine(string.Format("Found {0} SELECTs, {1} INSERTs, {2} UPDATEs & {3} DELETEs",
+                this.SELECTcount,
+                this.INSERTcount,
+                this.UPDATEcount,
+                this.DELETEcount));
+        }
+    }
+
     class Program
     {
         static void ssis_foo()
@@ -39,18 +98,44 @@ namespace SqlServerUtilities
             pkg.addDataFlowTasksBySchema("DSDW", "Community", src_server, dst_server);
             pkg.addDataFlowTasksBySchema("DSDW", "Dim", src_server, dst_server);
             pkg.savePackage();
-            
-            
+
+
             dst_server = "STDBDECSUP01";
             src_server = "STDBDECSUP02";
             pkg = new EtlPackage(string.Format("CommunityMart {0}-{1}.dtsx", src_server, dst_server));
             pkg.addDataFlowTasksBySchema("CommunityMart", "dbo", src_server, dst_server);
             pkg.addDataFlowTasksBySchema("CommunityMart", "Dim", src_server, dst_server);
             pkg.savePackage();
-            
+
             pkg = new EtlPackage(string.Format("DSDW {0}-{1}.dtsx", src_server, dst_server));
             pkg.addDataFlowTasksBySchema("DSDW", "Community", src_server, dst_server);
             pkg.addDataFlowTasksBySchema("DSDW", "Dim", src_server, dst_server);
+            pkg.savePackage();
+        }
+        static void dataRequestSnapShot()
+        {
+            string src_server;
+            string dst_server;
+            EtlPackage pkg;
+
+            dst_server = "STDBDECSUP01";
+            src_server = "SPDBDECSUP04";
+            pkg = new EtlPackage(string.Format("DataRequest {0}-{1}.dtsx", src_server, dst_server));
+            pkg.addDataFlowTasksBySchema("DataRequest", "dbo", src_server, dst_server);
+            pkg.addDataFlowTasksBySchema("DataRequest", "Dim", src_server, dst_server);
+            pkg.savePackage();
+        }
+        static void communityMartSnapShot()
+        {
+            string src_server;
+            string dst_server;
+            EtlPackage pkg;
+            string databaseName = "CommunityMart";
+            dst_server = "STDBDECSUP01";
+            src_server = "SPDBDECSUP04";
+            pkg = new EtlPackage(string.Format("{0} {1}-{2}.dtsx", databaseName, src_server, dst_server));
+            pkg.addDataFlowTasksBySchema(databaseName, "dbo", src_server, dst_server);
+            pkg.addDataFlowTasksBySchema(databaseName, "Dim", src_server, dst_server);
             pkg.savePackage();
         }
         static void test_etl()
@@ -216,8 +301,92 @@ namespace SqlServerUtilities
             Database database = SchemaReader.getDatabase("localhost", "DSDW");
             ScriptWriter.GetIfExists(database, "Dim.Date", "U");
         }
+        static void browseMsdb()
+        {
+            string sqlFolder;
+            string sqlServer;
+
+            Application ssisApplication;
+            PackageInfos sqlPackages;
+
+            sqlServer = "STDBDECSUP01";
+
+            ssisApplication = new Application();
+
+            // Get packages stored in MSDB.    
+            sqlFolder = "MSDB";
+            sqlPackages = ssisApplication.GetDtsServerPackageInfos(sqlFolder, sqlServer);
+            if (sqlPackages.Count > 0)
+            {
+                Console.WriteLine("Packages stored in MSDB:");
+                foreach (PackageInfo sqlPackage in sqlPackages)
+                {
+                    Console.WriteLine(sqlPackage.Name);
+                    string folderPath = Path.Combine(sqlFolder, sqlPackage.Name);
+                    if (ssisApplication.FolderExistsOnDtsServer(folderPath, sqlServer))
+                    {
+                        Console.WriteLine(string.Format("{0} is a folder", folderPath));
+                    }
+                }
+                Console.WriteLine();
+            }
+
+            // Get packages stored in the File System.    
+            sqlFolder = "File System";
+            sqlPackages = ssisApplication.GetDtsServerPackageInfos(sqlFolder, sqlServer);
+            if (sqlPackages.Count > 0)
+            {
+                Console.WriteLine("Packages stored in the File System:");
+                foreach (PackageInfo sqlPackage in sqlPackages)
+                {
+                    Console.WriteLine(sqlPackage.Name);
+                }
+            }
+
+            Console.Read();
+
+        }
+        static void test_MsdbReader()
+        {
+            string server = "STDBDECSUP01";
+            string database = "MSDB";
+            MsdbReader rdr = new MsdbReader(server, database);
+            rdr.BreadthFirstCrawl();
+            foreach (string key in rdr.PkgTablePairs.Keys)
+            {
+                Console.WriteLine(string.Format("Package Name: {0}\n\tTable Names:", key));
+                foreach (string value in rdr.PkgTablePairs[key])
+                {
+                    Console.WriteLine(string.Format("\t{0}", value));
+                }
+            }
+            rdr.SaveToSqlScript();
+        }
+        static void test_GetConnectionStringDatabase()
+        {
+            CommonUtils.CommonUtils.extractDatabaseName(@"Data Source = STDBDECSUP01; Initial Catalog = CommunityMart; Provider = SQLOLEDB.1; Integrated Security = SSPI;");
+
+        }
+
+        static void script_dom()
+        {
+            string scriptPath = Path.Combine(CommonUtils.CommonUtils.cwd(), "TestScript.sql");
+            TextReader txtRdr = new StreamReader(scriptPath);
+            TSql110Parser parser = new TSql110Parser(true);
+            IList<ParseError> errors;
+            TSqlFragment sqlFragment = parser.Parse(txtRdr, out errors);
+
+            SQLVisitor myVisitor = new SQLVisitor();
+            sqlFragment.Accept(myVisitor);
+
+
+            myVisitor.DumpStatistics();
+
+        }
         static void Main(string[] args)
         {
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
             CommonUtils.CommonUtils.preExecutionSetup();
             //ssis_foo();
             //createEtl();
@@ -225,7 +394,23 @@ namespace SqlServerUtilities
             //test_etl();
             //test_scripting();
             //test_script_extensions();
-            test_ScriptWriter();
+            //test_ScriptWriter();
+            //communityMartSnapShot();
+            //browseMsdb();
+            //test_MsdbReader();
+            //test_GetConnectionStringDatabase();
+            //script_dom();
+            communityMartSnapShot();
+           
+            stopWatch.Stop();
+            // Get the elapsed time as a TimeSpan value.
+            TimeSpan ts = stopWatch.Elapsed;
+
+            // Format and display the TimeSpan value.
+            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+                ts.Hours, ts.Minutes, ts.Seconds,
+                ts.Milliseconds / 10);
+            Console.WriteLine("RunTime " + elapsedTime);
             CommonUtils.CommonUtils.user_exit();
         }
 

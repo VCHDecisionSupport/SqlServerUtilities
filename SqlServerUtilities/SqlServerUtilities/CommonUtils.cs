@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace CommonUtils
 {
@@ -111,6 +112,25 @@ namespace CommonUtils
         {
             input.Print(0);
         }
-        
+        public static string extractDatabaseName(string connectionString)
+        {
+            Regex regex = new Regex(@"Initial Catalog[ ]*=[ ]*(?<database>[\w\..]+);");
+            MatchCollection matches = regex.Matches(connectionString);
+            //Console.WriteLine("{0} matches found in:\n   {1}",
+            //             matches.Count,
+            //             connectionString);
+
+            // Report on each match.
+            foreach (Match match in matches)
+            {
+                GroupCollection groups = match.Groups;
+                //Console.WriteLine("'{0}' repeated at positions {1} and {2}",
+                //                  groups["database"].Value,
+                //                  groups[0].Index,
+                //                  groups[1].Index);
+                return groups["database"].Value;
+            }
+            return null;
+        }
     }
 }
