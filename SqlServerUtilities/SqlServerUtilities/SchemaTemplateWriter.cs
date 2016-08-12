@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SqlServerUtilities
 {
-    public class SchemaWriter
+    public class SchemaTemplateWriter
     {
         public Database dst_database { get; private set; }
         public Server dst_server { get; private set; }
@@ -18,22 +18,22 @@ namespace SqlServerUtilities
         /// </summary>
         /// <param name="server"></param>
         /// <param name="database"></param>
-        public SchemaWriter(Server server, Database database)
+        public SchemaTemplateWriter(Server server, Database database)
         {
             dst_server = server;
             dst_database = database;
         }
-        public SchemaWriter(string server_name, string database_name)
+        public SchemaTemplateWriter(string server_name, string database_name)
         {
             dst_server = new Server(server_name);
             dst_database = new Database(dst_server, database_name);
         }
-        public SchemaWriter(Database database)
+        public SchemaTemplateWriter(Database database)
         {
             dst_server = database.Parent;
             dst_database = database;
         }
-        public SchemaWriter(Server server, string database_name)
+        public SchemaTemplateWriter(Server server, string database_name)
         {
             dst_server = server;
             dst_database = new Database(dst_server, database_name);

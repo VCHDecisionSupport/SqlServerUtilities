@@ -32,7 +32,7 @@ namespace SqlServerUtilities
         private Regex connection_string_regex = new Regex(@"Data Source=(?<server_name>\w+);Initial Catalog=(?<database_name>\w+);Provider=SQLOLEDB.1;Integrated Security=SSPI;");
         public bool IsSaved { get; set; }
         public Application app { get; set; }
-        public List<string> DestinationTables;
+        public List<Tuple<string,string>> DestinationTables;
         public string package_file_name
         {
             get
@@ -128,10 +128,7 @@ namespace SqlServerUtilities
             {
                 ConnectionManager newConnectionManager = _package.Connections.Add("OLEDB");
                 newConnectionManager.Name = connection_name;
-                string confmt = "Data Source={0};" +
-                  "Initial Catalog={1};Provider=SQLOLEDB.1;" +
-                  "Integrated Security=SSPI;";
-                string connection_string = string.Format(confmt, server_name, database_name);
+                string connection_string = CommonUtils.CommonUtils.getEtlConnectionString(server_name, database_name);
                 newConnectionManager.ConnectionString = connection_string;
                 _connection_dict.Add(connection_name, connection_string);
                 return connection_name;
@@ -239,15 +236,24 @@ namespace SqlServerUtilities
             //{
             //    System.Console.WriteLine("connection manager: {0}", con.Name);
             //}
-            // Set the custom properties: source view query and access mode
-            source_component_wrapper.SetComponentProperty("AccessMode", 2);
-            string src_query = string.Format("SELECT * FROM [{0}].[{1}];", src_table.Schema, src_table.Name);
-            Console.WriteLine(src_query);
-            source_component_wrapper.SetComponentProperty("SqlCommand", src_query);
+            // Set the custom properties: source view query and access mode  see here: https://msdn.microsoft.com/en-us/library/hh213133(v=sql.110).aspx
+
+            // OpenRowset Using Fastload
+            source_component_wrapper.SetComponentProperty("AccessMode", 3);
+            source_component_wrapper.SetComponentProperty("OpenRowset", string.Format("[{0}].[{1}]",src_table.Schema, src_table.Name));
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            //source_component_wrapper.SetComponentProperty("AccessMode", 2);
+            //string src_query = string.Format("SELECT * FROM [{0}].[{1}];", src_table.Schema, src_table.Name);
+            //Console.WriteLine(src_query);
+            //source_component_wrapper.SetComponentProperty("SqlCommand", src_query);
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            
             // Connect to the data source view
             source_component_wrapper.AcquireConnections(null);
             // Reinitialize the metadata.
-            source_component_wrapper.ReinitializeMetaData();
+//???????????            //source_component_wrapper.ReinitializeMetaData();
             source_component_wrapper.ReleaseConnections();
 
             /* ADD DESTINATION COMPONENT */
@@ -323,9 +329,11 @@ namespace SqlServerUtilities
                     {
                         Console.WriteLine("{0} is an identity column", src_table.Columns[cinputColumnName]);
                     }
-                    destination_component_wrapper.MapInputColumn(input.ID, vCol.ID, input.ExternalMetadataColumnCollection[vColumn.Name].ID);
-                    Console.WriteLine("\t{0} ({1}) => {2}", input.ExternalMetadataColumnCollection[vColumn.Name].Name, input.ExternalMetadataColumnCollection[vColumn.Name].DataType.ToString(), vColumn.Name);
-
+                    else
+                    {
+                        destination_component_wrapper.MapInputColumn(input.ID, vCol.ID, input.ExternalMetadataColumnCollection[vColumn.Name].ID);
+                        Console.WriteLine("\t{0} ({1}) => {2}", input.ExternalMetadataColumnCollection[vColumn.Name].Name, input.ExternalMetadataColumnCollection[vColumn.Name].DataType.ToString(), vColumn.Name);
+                    }
                     // confirm component initialized and valid 
                     if (destination_component_wrapper.Validate() == DTSValidationStatus.VS_NEEDSNEWMETADATA)
                     {
@@ -484,7 +492,7 @@ namespace SqlServerUtilities
         }
         public void getDestinationTables()
         {
-            DestinationTables = new List<string>();
+            DestinationTables = new List<Tuple<string,string>>();
             getDestinationTables(_package.Executables);
         }
         public void getDestinationTables(Executables execs)
@@ -562,8 +570,11 @@ namespace SqlServerUtilities
                                                 //Console.WriteLine(string.Format("\t\t\tConnectionString = {0}", conmgr.ConnectionString));
                                                 Console.WriteLine(string.Format("\t\t\tDatabase = {0}", CommonUtils.CommonUtils.extractDatabaseName(conmgr.ConnectionString)));
                                                 databaseName = CommonUtils.CommonUtils.extractDatabaseName(conmgr.ConnectionString);
-                                                tableName = databaseName + "." + tableName;
-                                                DestinationTables.Add(tableName);
+                                                Tuple<string, string> databaseTable = new Tuple<string, string>(databaseName,tableName);
+
+                                                //tableName = databaseName + "." + tableName;
+                                                //DestinationTables.Add(tableName);
+                                                DestinationTables.Add(databaseTable);
                                             }
 
                                         }

@@ -68,7 +68,8 @@ namespace CommonUtils
         public static void user_exit()
         {
             Console.WriteLine("\r\n\r\nexecution complete\r\npress enter key to exit");
-            while (Console.ReadKey().Key != ConsoleKey.Escape && Console.ReadKey().Key != ConsoleKey.Enter) { }
+            Console.ReadKey();
+            //while (Console.ReadKey().Key != ConsoleKey.Escape && Console.ReadKey().Key != ConsoleKey.Enter) { }
         }
         public static String cwd()
         {
@@ -131,6 +132,22 @@ namespace CommonUtils
                 return groups["database"].Value;
             }
             return null;
+        }
+        public static string getEtlConnectionString(string serverName, string databaseName)
+        {
+            string confmt = "Data Source={0};" +
+                  "Initial Catalog={1};Provider=SQLOLEDB.1;" +
+                  "Integrated Security=SSPI;";
+            string connection_string = string.Format(confmt, serverName, databaseName);
+            return connection_string;
+        }
+        public static string getSqlConnectionString(string serverName, string databaseName)
+        {
+            string confmt = "Data Source={0};" +
+                  "Initial Catalog={1};" +
+                  "Integrated Security=SSPI;";
+            string connection_string = string.Format(confmt, serverName, databaseName);
+            return connection_string;
         }
     }
 }
