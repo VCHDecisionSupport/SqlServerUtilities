@@ -14,3 +14,10 @@ C:\Users\user\Documents\GitHub\SqlServerUtilities\SqlServerUtilities\SqlServerUt
 C:\Users\user\Documents\GitHub\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\obj\Debug\SqlServerUtilities.csprojResolveAssemblyReference.cache
 C:\Users\user\Documents\GitHub\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\obj\Debug\SqlServerUtilities.exe
 C:\Users\user\Documents\GitHub\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\obj\Debug\SqlServerUtilities.pdb
+Z:\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\SqlServerUtilities.exe.config
+Z:\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\SqlServerUtilities.exe
+Z:\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\SqlServerUtilities.pdb
+Z:\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\bin\Debug\Microsoft.SqlServer.SQLTask.dll
+Z:\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\obj\Debug\SqlServerUtilities.csprojResolveAssemblyReference.cache
+Z:\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\obj\Debug\SqlServerUtilities.exe
+Z:\GITHUB\SqlServerUtilities\SqlServerUtilities\SqlServerUtilities\obj\Debug\SqlServerUtilities.pdb

@@ -238,22 +238,22 @@ namespace SqlServerUtilities
             //}
             // Set the custom properties: source view query and access mode  see here: https://msdn.microsoft.com/en-us/library/hh213133(v=sql.110).aspx
 
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             // OpenRowset Using Fastload
-            source_component_wrapper.SetComponentProperty("AccessMode", 3);
-            source_component_wrapper.SetComponentProperty("OpenRowset", string.Format("[{0}].[{1}]",src_table.Schema, src_table.Name));
+            //source_component_wrapper.SetComponentProperty("AccessMode", 3);
+            //source_component_wrapper.SetComponentProperty("OpenRowset", string.Format("[{0}].[{1}]",src_table.Schema, src_table.Name));
             /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            //source_component_wrapper.SetComponentProperty("AccessMode", 2);
-            //string src_query = string.Format("SELECT * FROM [{0}].[{1}];", src_table.Schema, src_table.Name);
-            //Console.WriteLine(src_query);
-            //source_component_wrapper.SetComponentProperty("SqlCommand", src_query);
-            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            source_component_wrapper.SetComponentProperty("AccessMode", 2);
+            string src_query = string.Format("SELECT * FROM [{0}].[{1}];", src_table.Schema, src_table.Name);
+            Console.WriteLine(src_query);
+            source_component_wrapper.SetComponentProperty("SqlCommand", src_query);
             
             // Connect to the data source view
             source_component_wrapper.AcquireConnections(null);
             // Reinitialize the metadata.
-//???????????            //source_component_wrapper.ReinitializeMetaData();
+            source_component_wrapper.ReinitializeMetaData();
             source_component_wrapper.ReleaseConnections();
 
             /* ADD DESTINATION COMPONENT */
