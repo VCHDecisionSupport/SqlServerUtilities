@@ -275,7 +275,7 @@ namespace SqlServerUtilities
             sqlPackages = ssisApplication.GetDtsServerPackageInfos(sqlFolder, sqlServer);
             if (sqlPackages.Count > 0)
             {
-                Console.WriteLine("Packages stored in MSDB:");
+                Console.WriteLine(string.Format("Packages stored in Sql Folder: {0}", sqlFolder));
                 foreach (PackageInfo sqlPackage in sqlPackages)
                 {
                     Console.WriteLine(sqlPackage.Name);
@@ -305,7 +305,14 @@ namespace SqlServerUtilities
         }
         static void test_MsdbReader()
         {
-            string serverName = "STDBDECSUP01";
+            string serverName = Environment.MachineName;
+            Console.WriteLine("current MachineName: {0}", serverName);
+
+            if (!serverName.Contains("DBDECSUP0"))
+            {
+                Console.WriteLine("current machine name does not contain \"DBDECSUP0\": defaulting to DEV Sql Server: STDBDECSUP01", serverName);
+                serverName = "STDBDECSUP01";
+            }
             string databaseName = "MSDB";
             MsdbReader rdr = new MsdbReader(serverName, databaseName);
             rdr.BreadthFirstCrawl();
@@ -317,14 +324,14 @@ namespace SqlServerUtilities
                     Console.WriteLine(string.Format("\t{0}", value));
                 }
             }
-            rdr.SaveToSqlScript();
-            rdr.InsertInto();
+            //rdr.SaveToSqlScript();
+            //rdr.InsertInto();
         }
         static void tableDdlDiff()
         {
             Table src_table = SchemaReader.getTable("STDBDECSUP01", "CommunityMart", "Dim", "Date");
             Table dst_table = SchemaReader.getTable("STDBDECSUP02", "CommunityMart", "Dim", "Date");
-            Console.WriteLine(string.Format("{0}",src_table.CompareDefinition(dst_table)));
+            Console.WriteLine(string.Format("{0}", src_table.CompareDefinition(dst_table)));
             //foreach (Column src_column in src_table.Columns)
             //{
             //    if (dst_table.Columns.Contains(src_column.Name))
@@ -351,27 +358,49 @@ namespace SqlServerUtilities
 
         static void Main(string[] args)
         {
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-            CommonUtils.CommonUtils.preExecutionSetup();
+            try
+            {
+                Stopwatch stopWatch = new Stopwatch();
+                stopWatch.Start();
+                //CommonUtils.CommonUtils.preExecutionSetup();
 
-            //test_script_extensions();
-            //test_MsdbReader();
-            test_Etl_Table();
-            //tableDdlDiff();
-            
-            stopWatch.Stop();
-            // Get the elapsed time as a TimeSpan value.
-            TimeSpan ts = stopWatch.Elapsed;
-            // Format and display the TimeSpan value.
-            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
-                ts.Hours, ts.Minutes, ts.Seconds,
-                ts.Milliseconds / 10);
-            Console.WriteLine("RunTime " + elapsedTime);
-            CommonUtils.CommonUtils.user_exit();
+                //test_script_extensions();
+                test_MsdbReader();
+                //test_Etl_Table();
+                //tableDdlDiff();
+
+                stopWatch.Stop();
+                // Get the elapsed time as a TimeSpan value.
+                TimeSpan ts = stopWatch.Elapsed;
+                // Format and display the TimeSpan value.
+                string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+                    ts.Hours, ts.Minutes, ts.Seconds,
+                    ts.Milliseconds / 10);
+                Console.WriteLine("RunTime " + elapsedTime);
+                //CommonUtils.CommonUtils.user_exit();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("An exception ({0}) occurred.", e.GetType().Name);
+                Console.WriteLine("Message:\n   {0}\n", e.Message);
+                Console.WriteLine("Stack Trace:\n   {0}\n", e.StackTrace);
+                Console.WriteLine("Unhandled Error");
+                Console.WriteLine("Unhandled Error");
+                Exception ie = e.InnerException;
+                if (ie != null)
+                {
+                    Console.WriteLine("   The Inner Exception:");
+                    Console.WriteLine("      Exception Name: {0}", ie.GetType().Name);
+                    Console.WriteLine("      Message: {0}\n", ie.Message);
+                    Console.WriteLine("      Stack Trace:\n   {0}\n", ie.StackTrace);
+                }
+                //throw;
+            }
+            finally
+            {
+                //CommonUtils.CommonUtils.user_exit();
+            }
         }
-
-
     }
 }
 

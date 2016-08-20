@@ -9,7 +9,7 @@ using Microsoft.SqlServer.Management.Smo;
 using System.Data.SqlClient;
 using System.Data;
 
-namespace SqlServerUtilities
+namespace PackageTableMapper
 {
     public class MsdbReader
     {
