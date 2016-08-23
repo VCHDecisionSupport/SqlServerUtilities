@@ -365,9 +365,15 @@ namespace SqlServerUtilities
                 //CommonUtils.CommonUtils.preExecutionSetup();
 
                 //test_script_extensions();
-                test_MsdbReader();
+                //test_MsdbReader();
                 //test_Etl_Table();
                 //tableDdlDiff();
+                for (int i = 0; i < args.Count(); i++)
+                {
+                    Console.WriteLine(string.Format("args[{0}] = {1}", i, args[i]));
+
+                }
+
 
                 stopWatch.Stop();
                 // Get the elapsed time as a TimeSpan value.
@@ -377,7 +383,7 @@ namespace SqlServerUtilities
                     ts.Hours, ts.Minutes, ts.Seconds,
                     ts.Milliseconds / 10);
                 Console.WriteLine("RunTime " + elapsedTime);
-                //CommonUtils.CommonUtils.user_exit();
+                CommonUtils.CommonUtils.user_exit();
             }
             catch (Exception e)
             {

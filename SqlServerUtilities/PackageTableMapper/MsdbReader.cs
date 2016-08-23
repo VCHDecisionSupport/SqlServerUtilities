@@ -19,6 +19,7 @@ namespace PackageTableMapper
         Application ssisApplication { get; set; }
         public Dictionary<string, List<Tuple<string, string>>> PkgTablePairs { get; set; }
         public Dictionary<string, List<Tuple<string, string>>> tempPkgTablePairs { get; set; }
+        int TestTypeID { get; set; }
         public MsdbReader()
         {
             this.serverName = "STDBDECSUP01";
@@ -38,6 +39,14 @@ namespace PackageTableMapper
         {
             this.serverName = serverName;
             this.rootDtsFolder = rootDtsFolder;
+            this.outfile = Path.Combine(CommonUtils.CommonUtils.cwd(), string.Format("PkgTableMapping_{0}_{1}.sql", serverName, rootDtsFolder));
+            ssisApplication = new Application();
+        }
+        public MsdbReader(string serverName, string rootDtsFolder, int TestTypeID)
+        {
+            this.serverName = serverName;
+            this.rootDtsFolder = rootDtsFolder;
+            this.TestTypeID = TestTypeID;
             this.outfile = Path.Combine(CommonUtils.CommonUtils.cwd(), string.Format("PkgTableMapping_{0}_{1}.sql", serverName, rootDtsFolder));
             ssisApplication = new Application();
         }
@@ -161,7 +170,7 @@ namespace PackageTableMapper
 "UPDATE SET  \n" +
 "dst.PackageID = map.PkgID \n" +
 "WHEN NOT MATCHED THEN \n" +
-"INSERT VALUEs (map.PkgID, map.objectID);", key, tableName, databaseName);
+"INSERT VALUEs (map.PkgID, map.objectID, {3});", key, tableName, databaseName, TestTypeID);
                     fout.WriteLine(sql);
                 }
             }
@@ -215,7 +224,7 @@ namespace PackageTableMapper
 "UPDATE SET  \n" +
 "dst.PackageID = map.PkgID \n" +
 "WHEN NOT MATCHED THEN \n" +
-"INSERT VALUES (map.PkgID, map.objectID, 0);");
+"INSERT VALUES (map.PkgID, map.objectID, {0});", this.TestTypeID);
             Console.WriteLine(string.Format("{0}", cmd.CommandText));
             SqlParameter PackageName = new SqlParameter("@packageName", SqlDbType.VarChar, 200);
             cmd.Parameters.Add(PackageName);
