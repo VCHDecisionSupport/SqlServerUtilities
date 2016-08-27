@@ -1,4 +1,5 @@
-﻿using Microsoft.SqlServer.Dts.Pipeline.Wrapper;
+﻿
+using Microsoft.SqlServer.Dts.Pipeline.Wrapper;
 using Microsoft.SqlServer.Dts.Runtime;
 using Microsoft.SqlServer.Management.Smo;
 using System;
@@ -345,6 +346,7 @@ namespace SqlServerUtilities
 
                 }
             }
+            dataFlowTask.EnableDisconnectedColumns = false;
 
             // validate _package
             DTSExecResult validation = _package.Validate(_package.Connections, null, null, null);
@@ -732,6 +734,11 @@ namespace SqlServerUtilities
             Table dst_table = SchemaReader.getTable(dst_server_name, dst_database_name, dst_schema_name, dst_table_name);
             Table src_table = SchemaReader.getTable(src_server_name, src_database_name, src_schema_name, src_table_name);
             return addTruncatePopulate(execs, src_table, dst_table);
+        }
+        public void ExecutePackage()
+        {
+            DTSExecResult res = _package.Execute();
+            Console.WriteLine(res.ToString());
         }
     }
 }

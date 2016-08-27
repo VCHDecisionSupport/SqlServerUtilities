@@ -1,0 +1,19 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{159641D6-6404-4A2A-AE62-294DE0FE8301}") = "SSIS_MartRefresh", "SSIS_MartRefresh\SSIS_MartRefresh.dtproj", "{CBBEBE33-CA4D-4977-A85A-AFFB1D83E7EA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Development|Default = Development|Default
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CBBEBE33-CA4D-4977-A85A-AFFB1D83E7EA}.Development|Default.ActiveCfg = Development
+		{CBBEBE33-CA4D-4977-A85A-AFFB1D83E7EA}.Development|Default.Build.0 = Development
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

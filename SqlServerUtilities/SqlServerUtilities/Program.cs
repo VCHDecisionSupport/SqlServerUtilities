@@ -86,12 +86,11 @@ namespace SqlServerUtilities
     class Program
     {
 
-        static void test_Etl_Database()
+        static void test_Etl_Database(string databaseName)
         {
             string src_server;
             string dst_server;
             EtlPackage pkg;
-            string databaseName = "CommunityMart";
             dst_server = "STDBDECSUP01";
             src_server = "SPDBDECSUP04";
             pkg = new EtlPackage(string.Format("{0} {1}-{2}.dtsx", databaseName, src_server, dst_server));
@@ -99,16 +98,16 @@ namespace SqlServerUtilities
             pkg.addDataFlowTasksBySchema(databaseName, "Dim", src_server, dst_server);
             pkg.savePackage();
         }
-        static void test_Etl_Table()
+        static void test_Etl_Table(string table_name)
         {
             string src_server_name = "STDBDECSUP03";
             string src_database_name = "CommunityMart";
             string src_schema_name = "dbo";
-            string src_table_name = "SchoolHistoryFact";
+            string src_table_name = table_name;
             string dst_server_name = "STDBDECSUP01";
             string dst_database_name = "CommunityMart";
             string dst_schema_name = "dbo";
-            string dst_table_name = "SchoolHistoryFact";
+            string dst_table_name = table_name;
             EtlPackage pkg = new EtlPackage(string.Format("CommunityMart {0}-{1}.dtsx", src_server_name, dst_server_name));
             //packageName.addDataFlowTasksBySchema("CommunityMart", "dbo", src_server, dst_server);
             //packageName.addDataFlowTasksBySchema("CommunityMart", "Dim", src_server, dst_server);
@@ -364,15 +363,18 @@ namespace SqlServerUtilities
                 stopWatch.Start();
                 //CommonUtils.CommonUtils.preExecutionSetup();
 
+                string databaseName = "CommunityMart";
+                //test_Etl_Database(databaseName);
+                string table_name = "HoNOSFact";
+                test_Etl_Table(table_name);
                 //test_script_extensions();
                 //test_MsdbReader();
                 //test_Etl_Table();
                 //tableDdlDiff();
-                for (int i = 0; i < args.Count(); i++)
-                {
-                    Console.WriteLine(string.Format("args[{0}] = {1}", i, args[i]));
-
-                }
+                //for (int i = 0; i < args.Count(); i++)
+                //{
+                //    Console.WriteLine(string.Format("args[{0}] = {1}", i, args[i]));
+                //}
 
 
                 stopWatch.Stop();
