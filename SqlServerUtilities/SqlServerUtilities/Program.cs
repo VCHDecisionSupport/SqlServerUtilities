@@ -11,7 +11,7 @@ using Microsoft.SqlServer.Management.Sdk.Sfc;
 using Microsoft.SqlServer.Dts.Runtime;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System.Diagnostics;
-
+using CommonUtils;
 namespace SqlServerUtilities
 {
     //internal class SQLVisitor : TSqlFragmentVisitor
@@ -85,7 +85,6 @@ namespace SqlServerUtilities
     //    }
     class Program
     {
-
         static void test_Etl_Database(string databaseName)
         {
             string src_server;
@@ -216,46 +215,86 @@ namespace SqlServerUtilities
             }
 
         }
-        static void test_script_extensions()
-        {
-            Server server = SchemaReader.getServer("STDBDECSUP01");
-            Database src_database = server.Databases["DSDW"];
-            Console.WriteLine(string.Format("{0}", src_database.ToScript()));
-            //string dst_database_name = "DSDW2";
-            //Database dst_database;
-            //if (!server.Databases.Contains(dst_database_name))
-            //{
-            //    dst_database = new Database(server, "DSDW2");
+        //static void test_script_extensions()
+        //{
+        //    Server server = SchemaReader.getServer("STDBDECSUP01");
+        //    Database src_database = server.Databases["DSDW"];
+        //    Console.WriteLine(string.Format("{0}", src_database.ToScript()));
+        //string dst_database_name = "DSDW2";
+        //Database dst_database;
+        //if (!server.Databases.Contains(dst_database_name))
+        //{
+        //    dst_database = new Database(server, "DSDW2");
 
-            //    dst_database.Create();
-            //}
-            //else
-            //{
-            //    dst_database = server.Databases[dst_database_name];
-            //}
+        //    dst_database.Create();
+        //}
+        //else
+        //{
+        //    dst_database = server.Databases[dst_database_name];
+        //}
 
-            //foreach (Table src_table in src_database.Tables)
-            //{
-            //    Console.WriteLine(src_table.Name);
-            //    Table dst_table = new Table(dst_database, src_table.Schema, src_table.Name);
-            //    foreach (Column src_column in src_table.Columns)
-            //    {
-            //        Column dst_column = new Column(dst_table, src_column.Name, src_column.DataType);
-            //        dst_column.Nullable = src_column.Nullable;
-            //        dst_column.Default = src_column.Default;
-            //        dst_table.Columns.Add(dst_column);
-            //    }
-            //    dst_table.Create();
-            //    break;
-            //}
-        }
+        //foreach (Table src_table in src_database.Tables)
+        //{
+        //    Console.WriteLine(src_table.Name);
+        //    Table dst_table = new Table(dst_database, src_table.Schema, src_table.Name);
+        //    foreach (Column src_column in src_table.Columns)
+        //    {
+        //        Column dst_column = new Column(dst_table, src_column.Name, src_column.DataType);
+        //        dst_column.Nullable = src_column.Nullable;
+        //        dst_column.Default = src_column.Default;
+        //        dst_table.Columns.Add(dst_column);
+        //    }
+        //    dst_table.Create();
+        //    break;
+        //}
+        //}
         static void test_SchemaWriter()
         {
-            SchemaTemplateWriter wrtr = new SchemaTemplateWriter("STDBDECSUP01", "ShellDSDW");
-            Table src_table = SchemaReader.getTable("STDBDECSUP01", "DSDW", "Dim", "Date");
-            wrtr.AddTable(src_table);
-            string ddl = wrtr.CreateAll();
-            Console.WriteLine(ddl);
+            Table tab = SchemaReader.getTable("STDBDECSUP01", "CommunityMart", "dbo", "ReferralFact");
+            tab = SchemaReader.getTable("STDBDECSUP01", "AutoTest", "dbo", "TableProfile");
+            string tab_sql = tab.ToScript();
+            Console.WriteLine(string.Format("{0}", tab_sql));
+            StreamWriter wrtr = new StreamWriter(CommonUtils.CommonUtils.cwd() + "/tabledef.sql");
+            wrtr.Write(tab_sql);
+            wrtr.Close();
+        }
+        public static void test_Depend()
+        {
+            Table tab = SchemaReader.getTable("STDBDECSUP01", "CommunityMart", "dbo", "ReferralFact");
+            tab = SchemaReader.getTable("STDBDECSUP01", "AutoTest", "dbo", "TableProfile");
+            DependencyWalker wkr = new DependencyWalker(SchemaReader.getServer("STDBDECSUP01"));
+            DependencyTree tree = wkr.DiscoverDependencies(new[] { tab as SqlSmoObject }, DependencyType.Children);
+            DependencyTreeNode node;// = tree;
+            if (tree.HasChildNodes)
+            {
+                node = tree.FirstChild;
+                node.Print();
+                node.Urn.Print();
+                node.GetType().Print();
+                node.Urn.Type.Print();
+                node.Urn.Value.Print();
+                if (node.NumberOfSiblings > 0)
+                {
+                    node = tree.NextSibling;
+                    node.Print();
+                    node.Urn.Print();
+                    node.GetType().Print();
+                    node.Urn.Type.Print();
+                    node.Urn.Value.Print();
+                }
+                    //node = node.NextSibling;
+                    //node.Print();
+                    //node.Urn.Print();
+                    //node.GetType().Print();
+                    //node.Urn.Type.Print();
+                    //node.Urn.Value.Print();
+                }
+            //tree.HasChildNodes.Print();
+            //Urn urn = tree.FirstChild.Urn;
+            //urn.Print();
+
+            //tree.Print();
+
         }
         static void browseMsdb()
         {
@@ -354,19 +393,18 @@ namespace SqlServerUtilities
             //    Console.WriteLine(string.Format("{0} != {1}", src_table.ToString(), dst_table.ToString()));
             //}
         }
-
         static void Main(string[] args)
         {
             try
             {
                 Stopwatch stopWatch = new Stopwatch();
                 stopWatch.Start();
-                //CommonUtils.CommonUtils.preExecutionSetup();
+                CommonUtils.CommonUtils.preExecutionSetup();
 
-                string databaseName = "CommunityMart";
+                //string databaseName = "CommunityMart";
                 //test_Etl_Database(databaseName);
-                string table_name = "HoNOSFact";
-                test_Etl_Table(table_name);
+                //string table_name = "HoNOSFact";
+                //test_Etl_Table(table_name);
                 //test_script_extensions();
                 //test_MsdbReader();
                 //test_Etl_Table();
@@ -375,6 +413,8 @@ namespace SqlServerUtilities
                 //{
                 //    Console.WriteLine(string.Format("args[{0}] = {1}", i, args[i]));
                 //}
+
+                test_Depend();
 
 
                 stopWatch.Stop();

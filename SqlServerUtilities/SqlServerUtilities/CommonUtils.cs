@@ -123,6 +123,11 @@ namespace CommonUtils
         {
             input.Print(0);
         }
+        public static void Print(this object obj)
+        {
+            System.Type t = obj.GetType();
+            string.Format("({0}){1}", t.ToString(), obj.ToString()).Print();
+        }
         public static string extractDatabaseName(string connectionString)
         {
             Regex regex = new Regex(@"Initial Catalog[ ]*=[ ]*(?<database>[\w\..]+);");

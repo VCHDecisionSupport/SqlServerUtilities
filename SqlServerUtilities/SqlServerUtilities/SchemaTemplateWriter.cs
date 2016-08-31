@@ -38,12 +38,12 @@ namespace SqlServerUtilities
             dst_server = server;
             dst_database = new Database(dst_server, database_name);
         }
-        public string CreateAll()
-        {
-            string script = "";
-            script += dst_database.ToScript();
-            return script;
-        }
+        //public string CreateAll()
+        //{
+        //    string script = "";
+        //    script += dst_database.ToScript();
+        //    return script;
+        //}
         public Schema AddSchema(Schema src_schema)
         {
              Schema dst_schema;
