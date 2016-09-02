@@ -113,11 +113,20 @@ namespace CommonUtils
             {
                 bitexe = "32 bit";
             }
+            TextWriterTraceListener myWriter = new TextWriterTraceListener(System.Console.Out);
+            Debug.Listeners.Add(myWriter);
             Console.WriteLine(string.Format("Current Machine: {0}\nCurrent UserName: {1}\nRunning as {2} executable", Environment.MachineName, Environment.UserName, bitexe));
         }
-        public static void Print(this string input, int indent)
+        public static void Print(this string input, int tabCount, ref StreamWriter wrtr)
         {
-            Console.WriteLine(string.Format("{0}", input));
+            string tab = new string('\t', tabCount);
+            Console.WriteLine(string.Format("{0}{1}", tab,input));
+            wrtr.WriteLine(string.Format("{0}{1}", tab,input));
+        }
+        public static void Print(this string input, int tabCount)
+        {
+            string tab = new string('\t', tabCount);
+            Console.WriteLine(string.Format("{0}{1}", tab, input));
         }
         public static void Print(this string input)
         {

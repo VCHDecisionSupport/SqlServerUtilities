@@ -9,10 +9,12 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Diagnostics;
 using Microsoft.SqlServer.Dts.Tasks.BulkInsertTask;
 using Microsoft.SqlServer.Dts.Tasks.FileSystemTask;
 using Microsoft.SqlServer.Dts.Tasks.ExecuteSQLTask;
 using Microsoft.SqlServer.Dts.Tasks.SendMailTask;
+using CommonUtils;
 
 namespace SqlServerUtilities
 {
@@ -33,7 +35,7 @@ namespace SqlServerUtilities
         private Regex connection_string_regex = new Regex(@"Data Source=(?<server_name>\w+);Initial Catalog=(?<database_name>\w+);Provider=SQLOLEDB.1;Integrated Security=SSPI;");
         public bool IsSaved { get; set; }
         public Application app { get; set; }
-        public List<Tuple<string,string>> DestinationTables;
+        public List<Tuple<string, string>> DestinationTables;
         public string package_file_name
         {
             get
@@ -52,6 +54,7 @@ namespace SqlServerUtilities
                 _package_file_name = value;
             }
         }
+        public StreamWriter logFile;
         public string cleanSsisTaskName(string task_name)
         {
             return Regex.Replace(task_name, @"[\[\]\\\.]", "", RegexOptions.None, TimeSpan.FromSeconds(1.5));
@@ -65,16 +68,36 @@ namespace SqlServerUtilities
         //    package_file_name = string.Format("{0} {1}-{2}.dtsx", database_name, src_server_name, dst_server_name);
         //    addDataFlowTasksBySchema(database_name, src_server_name, dst_server_name);
         //}
-        public EtlPackage(string file_name)
-        {
-            _package = new Package();
-            app = new Application();
 
-            _package.DelayValidation = true;
+        /// <summary>
+        /// Constructor
+        /// initialize EtlPackage object from *.dtsx file if it exists, if doesn't exist create new one.
+        /// </summary>
+        /// <param name="dtsx_file_path">path of dtsx package file</param>
+        public EtlPackage(string dtsx_file_path)
+        {
+            app = new Application();
+            if (File.Exists(dtsx_file_path))
+            {
+                Debug.WriteLine(string.Format("initializing EtlPackage from local file:\n\t{0}", dtsx_file_path));
+                _package = app.LoadPackage(dtsx_file_path, null);
+                _package.DelayValidation = true;
+            }
+            else
+            {
+                _package = new Package();
+            }
             IsSaved = false;
             _connection_dict = new connection_dictionary();
-            package_file_name = file_name;
+            package_file_name = dtsx_file_path;
         }
+        /// <summary>
+        /// Constructor
+        /// initialize EtlPackage object from MSDB (ie. LoadFromDtsServer) deployed package
+        /// </summary>
+        /// <param name="ssisPath"></param>
+        /// <param name="serverName"></param>
+        /// <param name="events"></param>
         public EtlPackage(string ssisPath, string serverName, IDTSEvents events)
         {
             app = new Application();
@@ -87,6 +110,10 @@ namespace SqlServerUtilities
             //Executable exec = _package.Executables["FLC"];
             //Executable exec2 = (exec as IDTSSequence).Executables.Add("STOCK:ScriptTask");
         }
+        /// <summary>
+        /// Default Constructor
+        /// initialize EtlPackage empty package
+        /// </summary>
         public EtlPackage()
         {
             app = new Application();
@@ -98,24 +125,28 @@ namespace SqlServerUtilities
             //Executable exec = _package.Executables["FLC"];
             //Executable exec2 = (exec as IDTSSequence).Executables.Add("STOCK:ScriptTask");
         }
-
+        /// <summary>
+        /// save EtlPackage to xml *.dtsx file
+        /// </summary>
+        /// <returns>path of saved *.dtsx file</returns>
         public string savePackage()
         {
-            return savePackage(package_file_name);
-        }
-        public string savePackage(string package_name)
-        {
-            package_file_name = package_name;
             _package.Name = Path.GetFileNameWithoutExtension(package_file_name);
             if (!IsSaved)
             {
                 _package.Validate(_package.Connections, null, null, null);
-                app.SaveToXml(package_name, _package, null);
-                Console.WriteLine("\r\n\r\npackage saved to:\r\n{0}\r\n{1}", Directory.GetCurrentDirectory(), package_name);
+                app.SaveToXml(package_file_name, _package, null);
+                Console.WriteLine("\r\n\r\npackage saved to:\r\n{0}\r\n{1}", Directory.GetCurrentDirectory(), package_file_name);
                 IsSaved = true;
             }
-            return Path.Combine(package_name);
+            return Path.Combine(package_file_name);
         }
+        /// <summary>
+        /// Add database connection to package.
+        /// Follows ServerName-DatabaseName naming convection
+        /// </summary>
+        /// <param name="database"></param>
+        /// <returns>connection name</returns>
         public string addConnection(Database database)
         {
             string server_name = database.Parent.Name;
@@ -169,17 +200,38 @@ namespace SqlServerUtilities
             //}
             //return connection_name;
         }
+        /// <summary>
+        /// overload of addConnection(Database database)
+        /// </summary>
+        /// <param name="table"></param>
+        /// <returns></returns>
         public string addConnection(Table table)
         {
             Database database = table.Parent;
             Server server = database.Parent;
             return addConnection(server.Name, database.Name);
         }
+        /// <summary>
+        /// overload of addConnection(Database database)
+        /// </summary>
+        /// <param name="table"></param>
+        /// <returns></returns>
         public string addConnection(string server_name, string database_name)
         {
             Database database = SchemaReader.getDatabase(server_name, database_name);
             return addConnection(database);
         }
+        public string getConnectionManagerConnectionString(string ID)
+        {
+            foreach (ConnectionManager con in _package.Connections)
+            {
+                if (con.ID == ID)
+                {
+                    return con.ConnectionString;
+                }
+            }
+            return null;
+        } 
         public string getTaskName()
         {
             return "";
@@ -250,7 +302,7 @@ namespace SqlServerUtilities
             string src_query = string.Format("SELECT * FROM [{0}].[{1}];", src_table.Schema, src_table.Name);
             Console.WriteLine(src_query);
             source_component_wrapper.SetComponentProperty("SqlCommand", src_query);
-            
+
             // Connect to the data source view
             source_component_wrapper.AcquireConnections(null);
             // Reinitialize the metadata.
@@ -362,139 +414,251 @@ namespace SqlServerUtilities
             Table dst_table = SchemaReader.getTable(dst_server_name, dst_database_name, dst_schema_name, dst_table_name);
             return addDataFlowTask(src_table, dst_table);
         }
+        private void parseDataFlow(TaskHost th, int tabCount)
+        {
+            string value_str = "";
+            "-------------------------------------------------------------".Print(0, ref logFile);
+            string.Format("Data Flow Task: {0}", th.Name).Print(tabCount, ref logFile);
+            MainPipe mp = th.InnerObject as MainPipe;
+            foreach (IDTSComponentMetaData100 mdcol in mp.ComponentMetaDataCollection)
+            {
+                string.Format("Component: {0}", mdcol.ContactInfo.Split(';')[0]).Print(tabCount + 1, ref logFile);
+                string.Format("{0}: {1}", nameof(mdcol.Name), mdcol.Name).Print(tabCount + 2, ref logFile);
+                string.Format("{0}: {1}", nameof(mdcol.Description), mdcol.Description).Print(tabCount + 2, ref logFile);
+
+                IDTSCustomPropertyCollection100 props = mdcol.CustomPropertyCollection;
+                if (props.Count > 0)
+                {
+                    "Component Custom Properties:".Print(tabCount + 2, ref logFile);
+                    // https://msdn.microsoft.com/en-us/library/hh213133.aspx
+                    foreach (IDTSCustomProperty100 prop in props)
+                    {
+                        value_str = prop.Value as string;
+                        if (prop.Name == "SqlCommand" && value_str.Length > 0)
+                        {
+                            "*********************************************".Print(0, ref logFile);
+                            string.Format("{0}:", prop.Name).Print(tabCount + 3, ref logFile);
+                            string.Format("{0}", value_str).Print(0, ref logFile);
+                            "*********************************************".Print(0, ref logFile);
+                        }
+                    }
+                }
+                try
+                {
+                    IDTSRuntimeConnectionCollection100 conns = mdcol.RuntimeConnectionCollection;
+                    if (conns.Count > 0)
+                    {
+                        string.Format("Component Connections:").Print(tabCount + 2, ref logFile);
+                        foreach (IDTSRuntimeConnection100 conn in conns)
+                        {
+                            string conStr = getConnectionManagerConnectionString(conn.ConnectionManagerID);
+                            string db = CommonUtils.CommonUtils.extractDatabaseName(conStr);
+                            string.Format("{0}: {1}", nameof(conn.Name), conn.Name).Print(tabCount + 3, ref logFile);
+                            string.Format("{0}: {1}", nameof(db), db).Print(tabCount + 4, ref logFile);
+                            string.Format("{0}: {1}", nameof(conStr), conStr).Print(tabCount + 4, ref logFile);
+                        }
+                    }
+                }
+                catch (Exception expection)
+                {
+                    logFile.WriteLine(expection);
+
+                }
+            }
+        }
         public void getExecutables()
         {
             Executables execs = _package.Executables;
+            logFile = new StreamWriter(Path.Combine(CommonUtils.CommonUtils.cwd(), Path.GetFileName(package_file_name) + ".txt"));
+            string.Format("Connection Count: {0}", _package.Connections.Count).Print(0, ref logFile);
+            foreach (ConnectionManager item in _package.Connections)
+            {
+                item.AcquireConnection(null);
+                string.Format("{0}: ({1}) {2} {3}", item.Name, item.CreationName, item.ConnectionString, item.ID).Print(0, ref logFile);
+            }
+            Console.WriteLine(_package.Connections.Contains("OLEDB"));
             getExecutables(execs);
         }
         public void getExecutables(Executables execs)
         {
+            getExecutables(execs, 0);
+        }
+        public void getExecutables(Executables execs, int tabCount)
+        {
+            string tab = new string('\t', tabCount);
+            string fmt = tab + "{0}: {1}";
+            string dtfmt = tab + "-{0}: {1}";
+            string flowfmt = tab + "DataFlow: {0}";
+            tab = new string('\t', tabCount + 1);
+            string flowdtfmt = tab + "-{0} {1}";
             foreach (Executable e in execs)
             {
-                Console.WriteLine(string.Format("\n\n\te.GetType() = {0}", e.GetType()));
                 if (e.GetType() == typeof(TaskHost))
                 {
-                    //Console.WriteLine(string.Format("\n\tTaskHost"));
                     TaskHost th = e as TaskHost;
-                    //Console.WriteLine(string.Format("\t\t\tTaskHost th = e as TaskHost;"));
-                    Console.WriteLine(string.Format("\t\t\tName = {0}", th.Name));
-
-
-                    //Console.WriteLine(string.Format("\t\t\tDescription = {0}", th.Description));
-                    //Console.WriteLine(string.Format("\tDescription = {0}", th.Description));
-                    //Console.WriteLine(string.Format("\tGetExecutionPath() = {0}", th.GetExecutionPath()));
-                    //Console.WriteLine(string.Format("\tGetType() = {0}", th.GetType()));
-                    //Console.WriteLine(string.Format("\tInnerObject.ToString() = {0}", th.InnerObject.ToString()));
-                    if (th.InnerObject.GetType() == typeof(ExecuteSQLTask))
+                    if (th.InnerObject is MainPipe)
                     {
-                        Console.WriteLine(string.Format("\t\t\tExecuteSQLTask"));
+                        parseDataFlow(th, tabCount + 1);
                     }
+                    //Console.WriteLine(th.InnerObject is MainPipe);
+                    //MainPipe mp = th.InnerObject as MainPipe;
+                    //if (mp != null)
+                    //{
+                    //    logFile.WriteLine(string.Format(flowfmt, th.Name));
+                    //    foreach (IDTSComponentMetaData100 mdcol in mp.ComponentMetaDataCollection)
+                    //    {
+                    //        logFile.WriteLine(string.Format(flowdtfmt, nameof(mdcol.ContactInfo), mdcol.ContactInfo.Split(';')[0]));
+                    //        logFile.WriteLine(string.Format(flowdtfmt, nameof(mdcol.Name), mdcol.Name));
+                    //        logFile.WriteLine(string.Format(flowdtfmt, nameof(mdcol.Description), mdcol.Description));
+                    //        IDTSCustomPropertyCollection100 props = mdcol.CustomPropertyCollection;
+
+                    //        if (mdcol.ContactInfo.Contains("Source"))
+                    //        {
+                    //            //Console.WriteLine(string.Format(dtfmt,props))
+
+                    //        }
+                    //        // https://msdn.microsoft.com/en-us/library/hh213133.aspx
+                    //        foreach (IDTSCustomProperty100 prop in props)
+                    //        {
+                    //            logFile.WriteLine(string.Format(flowdtfmt, prop.Name, prop.Value));
+                    //        }
+                    //        try
+                    //        {
+                    //            IDTSRuntimeConnectionCollection100 conns = mdcol.RuntimeConnectionCollection;
+                    //            foreach (IDTSRuntimeConnection100 conn in conns)
+                    //            {
+                    //                logFile.WriteLine(string.Format(flowdtfmt, conn.Name, conn.ConnectionManager));
+                    //            }
+                    //        }
+                    //        catch (Exception expection)
+                    //        {
+                    //            logFile.WriteLine(expection);
+
+                    //        }
+
+                    //        //    if (mdcol.Description == "OLE DB Destination")
+                    //        //{
+                    //        //    //IDTSCustomPropertyCollection100 props = mdcol.CustomPropertyCollection;
+                    //        //    foreach (IDTSCustomProperty100 prop in props)
+                    //        //    {
+                    //        //        if (prop.Name == "OpenRowset")
+                    //        //        {
+                    //        //            Console.WriteLine(string.Format("\t\t\tValue = {0}", prop.Value));
+                    //        //        }
+                    //        //    }
+                    //        //    IDTSRuntimeConnectionCollection100 conns = mdcol.RuntimeConnectionCollection;
+                    //        //foreach (IDTSRuntimeConnection100 conn in conns)
+                    //        //    {
+                    //        //        if (conn.Name == "OleDbConnection")
+                    //        //        {
+                    //        //            //Console.WriteLine(string.Format("\t\t\tOleDbConnection"));
+                    //        //            Console.WriteLine(string.Format("\t\t\tName = {0}", conn.Name));
+                    //        //            //Console.WriteLine(string.Format("\t\t\tDescription = {0}", conn.Description));
+                    //        //            //Console.WriteLine(string.Format("\t\t\tConnectionManagerID = {0}", conn.ConnectionManagerID));
+                    //        //            foreach (ConnectionManager conmgr in _package.Connections)
+                    //        //            {
+                    //        //                if (conmgr.ID == conn.ConnectionManagerID)
+                    //        //                {
+                    //        //                    //Console.WriteLine(string.Format("\t\t\tConnectionManager conmgr"));
+                    //        //                    //Console.WriteLine(string.Format("\t\t\tName = {0}", conmgr.Name));
+                    //        //                    //Console.WriteLine(string.Format("\t\t\tToString = {0}", conmgr.ToString()));
+                    //        //                    //Console.WriteLine(string.Format("\t\t\tID = {0}", conmgr.ID));
+                    //        //                    //Console.WriteLine(string.Format("\t\t\tCreationName = {0}", conmgr.CreationName));
+                    //        //                    Console.WriteLine(string.Format("\t\t\tConnectionString = {0}", conmgr.ConnectionString));
+                    //        //                    Console.WriteLine(string.Format("\t\t\tDatabase = {0}", CommonUtils.CommonUtils.extractDatabaseName(conmgr.ConnectionString)));
+                    //        //                }
+
+                    //        //            }
+                    //        //        }
+                    //        //    }
+                    //        //Console.WriteLine(string.Format("mdcol = mp.ComponentMetaDataCollection"));
+                    //        //Console.WriteLine(string.Format("Name = {0}", mdcol.Name));
+                    //        //Console.WriteLine(string.Format("Description = {0}", mdcol.Description));
+                    //        //Console.WriteLine(string.Format("ComponentClassID = {0}", mdcol.ComponentClassID));
+                    //        //Console.WriteLine(string.Format("mdcol.InputCollection"));
+                    //        //Console.WriteLine(string.Format("Count = {0}", mdcol.InputCollection.Count));
+                    //        //Console.WriteLine(string.Format("ToString() = {0}", mdcol.InputCollection.ToString()));
+                    //        //Console.WriteLine(string.Format("mdcol.OutputCollection"));
+                    //        //Console.WriteLine(string.Format("Count = {0}", mdcol.OutputCollection.Count));
+                    //        //Console.WriteLine(string.Format("ToString() = {0}", mdcol.OutputCollection.ToString()));
+
+                    //        //IDTSCustomPropertyCollection100 props = mdcol.CustomPropertyCollection;
+                    //        //Console.WriteLine(string.Format("IDTSCustomPropertyCollection100 props = mdcol.CustomPropertyCollection;"));
+                    //        //foreach (IDTSCustomProperty100 prop in props)
+                    //        //{
+                    //        //    Console.WriteLine(string.Format("IDTSCustomProperty100"));
+                    //        //    Console.WriteLine(string.Format("Name = {0}",prop.Name));
+                    //        //    Console.WriteLine(string.Format("Value = {0}",prop.Value));
+                    //        //}
+
+                    //        //IDTSPathCollection100 pc = mp.PathCollection;
+                    //        //Console.WriteLine(string.Format("IDTSPathCollection100 pc = mp.PathCollection"));
+                    //        //Console.WriteLine(string.Format("GetType() = {0}", pc.GetType()));
+                    //        //Console.WriteLine(string.Format("ToString() = {0}", pc.ToString()));
+                    //        }
+                    //}
                     else
                     {
-                        //Console.WriteLine(string.Format("\tGetType() = {0}", th.GetType()));
-                        //Console.WriteLine(string.Format("\t\t\tInnerObject.GetType() = {0}", th.InnerObject.GetType()));
-                        //Console.WriteLine(string.Format("\t\t\tInnerObject.ToString() = {0}", th.InnerObject.ToString()));
-                    }
-                    //foreach (DtsProperty prop in th.Properties)
-                    //{
-                    //    Console.WriteLine(string.Format("\t\tproperty: {0} (type={1}, connectionManager={2})", prop.Name, prop.Type, prop.ConnectionType));
-                    //    //if (prop.Name == "ComponentMetaDataCollection")
-                    //    //{
-                    //    //    IDTSComponentMetaData100 destination_component = prop.GetValue(prop) as IDTSComponentMetaData100;
-                    //    //}
-                    //}
-                    MainPipe mp = th.InnerObject as MainPipe;
-                    if (mp != null)
-                    {
-                        //Console.WriteLine(string.Format("\t\tmp.ToString() = {0}", mp.ToString()));
-                        foreach (IDTSComponentMetaData100 mdcol in mp.ComponentMetaDataCollection)
-                        {
-                            if (mdcol.Description == "OLE DB Destination")
-                            {
-                                IDTSCustomPropertyCollection100 props = mdcol.CustomPropertyCollection;
-                                foreach (IDTSCustomProperty100 prop in props)
-                                {
-                                    if (prop.Name == "OpenRowset")
-                                    {
-                                        Console.WriteLine(string.Format("\t\t\tValue = {0}", prop.Value));
-                                    }
-                                }
-                                IDTSRuntimeConnectionCollection100 conns = mdcol.RuntimeConnectionCollection;
-                                foreach (IDTSRuntimeConnection100 conn in conns)
-                                {
-                                    if (conn.Name == "OleDbConnection")
-                                    {
-                                        //Console.WriteLine(string.Format("\t\t\tOleDbConnection"));
-                                        Console.WriteLine(string.Format("\t\t\tName = {0}", conn.Name));
-                                        //Console.WriteLine(string.Format("\t\t\tDescription = {0}", conn.Description));
-                                        //Console.WriteLine(string.Format("\t\t\tConnectionManagerID = {0}", conn.ConnectionManagerID));
-                                        foreach (ConnectionManager conmgr in _package.Connections)
-                                        {
-                                            if (conmgr.ID == conn.ConnectionManagerID)
-                                            {
-                                                //Console.WriteLine(string.Format("\t\t\tConnectionManager conmgr"));
-                                                //Console.WriteLine(string.Format("\t\t\tName = {0}", conmgr.Name));
-                                                //Console.WriteLine(string.Format("\t\t\tToString = {0}", conmgr.ToString()));
-                                                //Console.WriteLine(string.Format("\t\t\tID = {0}", conmgr.ID));
-                                                //Console.WriteLine(string.Format("\t\t\tCreationName = {0}", conmgr.CreationName));
-                                                Console.WriteLine(string.Format("\t\t\tConnectionString = {0}", conmgr.ConnectionString));
-                                                Console.WriteLine(string.Format("\t\t\tDatabase = {0}", CommonUtils.CommonUtils.extractDatabaseName(conmgr.ConnectionString)));
-                                            }
-
-                                        }
-                                    }
-                                }
-                            }
-                            //Console.WriteLine(string.Format("mdcol = mp.ComponentMetaDataCollection"));
-                            //Console.WriteLine(string.Format("Name = {0}", mdcol.Name));
-                            //Console.WriteLine(string.Format("Description = {0}", mdcol.Description));
-                            //Console.WriteLine(string.Format("ComponentClassID = {0}", mdcol.ComponentClassID));
-                            //Console.WriteLine(string.Format("mdcol.InputCollection"));
-                            //Console.WriteLine(string.Format("Count = {0}", mdcol.InputCollection.Count));
-                            //Console.WriteLine(string.Format("ToString() = {0}", mdcol.InputCollection.ToString()));
-                            //Console.WriteLine(string.Format("mdcol.OutputCollection"));
-                            //Console.WriteLine(string.Format("Count = {0}", mdcol.OutputCollection.Count));
-                            //Console.WriteLine(string.Format("ToString() = {0}", mdcol.OutputCollection.ToString()));
-
-                            //IDTSCustomPropertyCollection100 props = mdcol.CustomPropertyCollection;
-                            //Console.WriteLine(string.Format("IDTSCustomPropertyCollection100 props = mdcol.CustomPropertyCollection;"));
-                            //foreach (IDTSCustomProperty100 prop in props)
-                            //{
-                            //    Console.WriteLine(string.Format("IDTSCustomProperty100"));
-                            //    Console.WriteLine(string.Format("Name = {0}",prop.Name));
-                            //    Console.WriteLine(string.Format("Value = {0}",prop.Value));
-                            //}
-
-                            //IDTSPathCollection100 pc = mp.PathCollection;
-                            //Console.WriteLine(string.Format("IDTSPathCollection100 pc = mp.PathCollection"));
-                            //Console.WriteLine(string.Format("GetType() = {0}", pc.GetType()));
-                            //Console.WriteLine(string.Format("ToString() = {0}", pc.ToString()));
-                        }
+                        Console.WriteLine(string.Format(fmt, th.InnerObject.GetType().Name, th.Name));
+                        logFile.WriteLine(string.Format(fmt, th.InnerObject.GetType().Name, th.Name));
+                        logFile.WriteLine(string.Format(dtfmt, nameof(th.Description), th.Description));
+                        logFile.WriteLine(string.Format(dtfmt, nameof(th.GetExecutionPath), th.GetExecutionPath()));
                     }
 
-                                        
+
                 }
+                //https://msdn.microsoft.com/en-us/library/microsoft.sqlserver.dts.runtime.executable.aspx
                 else if (e.GetType() == typeof(Sequence))
                 {
-                    Console.WriteLine(string.Format("\tSequence"));
+                    //Console.WriteLine(string.Format("\tSequence"));
                     Sequence seq = e as Sequence;
-                    Console.WriteLine(string.Format("\t\tName = {0}", seq.Name));
+                    //Console.WriteLine(string.Format("\t\tName = {0}", seq.Name));
+                    Console.WriteLine(string.Format(fmt, e.GetType().Name, seq.Name));
+                    logFile.WriteLine(string.Format(fmt, e.GetType().Name, seq.Name));
+
                     //Console.WriteLine(string.Format("\tGetExecutionPath() = {0}", seq.GetExecutionPath()));
-                    getExecutables(seq.Executables);
+                    getExecutables(seq.Executables, tabCount + 2);
                 }
                 else if (e.GetType() == typeof(ForEachLoop))
                 {
-                    Console.WriteLine(string.Format("\tForEachLoop", e.GetType()));
+                    //Console.WriteLine(string.Format("\tForEachLoop", e.GetType()));
                     ForEachLoop loop = e as ForEachLoop;
-                    Console.WriteLine(string.Format("\t\tName = {0}", loop.Name));
+                    //Console.WriteLine(string.Format("\t\tName = {0}", loop.Name));
                     //Console.WriteLine(string.Format("\t\tGetExecutionPath() = {0}", loop.GetExecutionPath()));
-                    getExecutables(loop.Executables);
+                    Console.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
+                    logFile.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
+                    getExecutables(loop.Executables, tabCount + 2);
+                }
+                else if (e.GetType() == typeof(ForLoop))
+                {
+                    //Console.WriteLine(string.Format("\tForEachLoop", e.GetType()));
+                    ForLoop loop = e as ForLoop;
+                    //Console.WriteLine(string.Format("\t\tName = {0}", loop.Name));
+                    //Console.WriteLine(string.Format("\t\tGetExecutionPath() = {0}", loop.GetExecutionPath()));
+                    Console.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
+                    logFile.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
+                    getExecutables(loop.Executables, tabCount + 2);
+                }
+                else if (e.GetType() == typeof(Package))
+                {
+                    //Console.WriteLine(string.Format("\tForEachLoop", e.GetType()));
+                    Package loop = e as Package;
+                    //Console.WriteLine(string.Format("\t\tName = {0}", loop.Name));
+                    //Console.WriteLine(string.Format("\t\tGetExecutionPath() = {0}", loop.GetExecutionPath()));
+                    Console.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
+                    logFile.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
+                    getExecutables(loop.Executables, tabCount + 2);
+                }
+                else
+                {
+                    Console.WriteLine(string.Format(fmt, e.GetType(), "UNHANDLED executable type"));
+                    logFile.WriteLine(string.Format(fmt, e.GetType(), "UNHANDLED executable type"));
                 }
             }
         }
         public void getDestinationTables()
         {
-            DestinationTables = new List<Tuple<string,string>>();
+            DestinationTables = new List<Tuple<string, string>>();
             getDestinationTables(_package.Executables);
         }
         public void getDestinationTables(Executables execs)
@@ -572,7 +736,7 @@ namespace SqlServerUtilities
                                                 //Console.WriteLine(string.Format("\t\t\tConnectionString = {0}", conmgr.ConnectionString));
                                                 Console.WriteLine(string.Format("\t\t\tDatabase = {0}", CommonUtils.CommonUtils.extractDatabaseName(conmgr.ConnectionString)));
                                                 databaseName = CommonUtils.CommonUtils.extractDatabaseName(conmgr.ConnectionString);
-                                                Tuple<string, string> databaseTable = new Tuple<string, string>(databaseName,tableName);
+                                                Tuple<string, string> databaseTable = new Tuple<string, string>(databaseName, tableName);
 
                                                 //tableName = databaseName + "." + tableName;
                                                 //DestinationTables.Add(tableName);
@@ -610,7 +774,7 @@ namespace SqlServerUtilities
                         }
                     }
 
-                                        
+
                 }
                 else if (exec.GetType() == typeof(Sequence))
                 {

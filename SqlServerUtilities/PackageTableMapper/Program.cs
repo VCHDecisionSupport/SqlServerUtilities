@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace PackageTableMapper
 {
     class Program
@@ -32,9 +33,12 @@ namespace PackageTableMapper
             rdr.SaveToSqlScript();
             rdr.InsertInto();
         }
+        /// <summary>
+        /// PackageTableMapper: C# console app populates all columns in the DQMF.dbo.ETL_PackageTable table.  PkgID is looked up from the DQMF.dbo.ETL_Package table.  PackageTableMapper walks Sql Server MSDB folders; reads the deployed SSIS ETL package files(*.dtsx) into memory using Microsoft.SqlServer.Dts C# .NET namespaces.  The destination table name from each Data Flow Task is extracted; it's ObjectID is looked up from DQMF.dbo.MD_Object.
+        /// </summary>
         static void Main(string[] args)
         {
-            Console.WriteLine(string.Format("USAGE example: PackageTableMapper 'TestTypeID=#' without quotes, where # is 0, 1, 2, or 3"));
+            Console.WriteLine(string.Format("USAGE example:\nPackageTableMapper TestTypeID=#\nwhere # is 0, 1, 2, or 3"));
             int TestTypeID = 3;
             if (args.Count() == 0)
             {
@@ -47,7 +51,6 @@ namespace PackageTableMapper
                 TestTypeID = int.Parse(args[0].Split('=')[1].Trim());
                 Parse_MsdbEtl(TestTypeID);
             }
-            //
         }
     }
 }

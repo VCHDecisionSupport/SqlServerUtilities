@@ -248,6 +248,23 @@ namespace SqlServerUtilities
         //    break;
         //}
         //}
+        static void test_EtlPackage_MSDB()
+        {
+            string pkgPath = @"MSDB\Emerg\Emerg_PHC\PHCMain";
+            string server = "STDBDECSUP01";
+            EtlPackage pkg = new EtlPackage(pkgPath, server, null);
+            pkg.getExecutables();
+            //pkg.logFile.Close();
+        }
+        static void test_EtlPackage_Reader()
+        {
+            string pkgPath = @"Z:\GITHUB\SqlServerUtilities\SqlServerUtilities\EtlTest\PopulateCommunityMart.dtsx";
+            //string pkgPath = @"CommunityMart SPDBDECSUP04-STDBDECSUP01.dtsx";
+            //pkgPath = Path.Combine(CommonUtils.CommonUtils.cwd(), pkgPath);
+            EtlPackage pkg = new EtlPackage(pkgPath);
+            pkg.getExecutables();
+            //pkg.logFile.Close();
+        }
         static void test_SchemaWriter()
         {
             Table tab = SchemaReader.getTable("STDBDECSUP01", "CommunityMart", "dbo", "ReferralFact");
@@ -414,8 +431,8 @@ namespace SqlServerUtilities
                 //    Console.WriteLine(string.Format("args[{0}] = {1}", i, args[i]));
                 //}
 
-                test_Depend();
-
+                //test_Depend();
+                test_EtlPackage_Reader();
 
                 stopWatch.Stop();
                 // Get the elapsed time as a TimeSpan value.
@@ -446,7 +463,7 @@ namespace SqlServerUtilities
             }
             finally
             {
-                //CommonUtils.CommonUtils.user_exit();
+                CommonUtils.CommonUtils.user_exit();
             }
         }
     }
