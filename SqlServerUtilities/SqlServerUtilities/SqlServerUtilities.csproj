@@ -122,6 +122,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CommonUtils.cs" />
+    <Compile Include="CopyObject.cs" />
     <Compile Include="DiffExtensions.cs" />
     <Compile Include="EtlPackage.cs" />
     <Compile Include="ExcelHandler.cs" />

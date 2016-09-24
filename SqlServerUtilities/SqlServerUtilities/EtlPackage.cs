@@ -33,29 +33,9 @@ namespace SqlServerUtilities
     {
         private Package _package;
         private connection_dictionary _connection_dict;
-        private string _package_file_name;
         private Regex connection_string_regex = new Regex(@"Data Source=(?<server_name>\w+);Initial Catalog=(?<database_name>\w+);Provider=SQLOLEDB.1;Integrated Security=SSPI;");
-        public bool IsSaved { get; set; }
         public Application app { get; set; }
         public List<Tuple<string, string>> DestinationTables;
-        public string package_file_name
-        {
-            get
-            {
-                if (_package_file_name == null)
-                {
-                    return string.Format("autoEtl.{0}.dtsx", DateTime.Today.ToString("YYYY-MM-DD"));
-                }
-                else
-                {
-                    return _package_file_name;
-                }
-            }
-            set
-            {
-                _package_file_name = value;
-            }
-        }
         public StreamWriter logFile;
         public string cleanSsisTaskName(string task_name)
         {
@@ -65,7 +45,6 @@ namespace SqlServerUtilities
         //{
         //    _package = new Package();
         //    _package.DelayValidation = true;
-        //    IsSaved = false;
         //    _connection_dict = new connection_dictionary();
         //    package_file_name = string.Format("{0} {1}-{2}.dtsx", database_name, src_server_name, dst_server_name);
         //    addDataFlowTasksBySchema(database_name, src_server_name, dst_server_name);
@@ -89,9 +68,7 @@ namespace SqlServerUtilities
             {
                 _package = new Package();
             }
-            IsSaved = false;
             _connection_dict = new connection_dictionary();
-            package_file_name = dtsx_file_path;
         }
         /// <summary>
         /// Constructor
@@ -106,9 +83,7 @@ namespace SqlServerUtilities
 
             _package = app.LoadFromDtsServer(ssisPath, serverName, events);
             _package.DelayValidation = true;
-            IsSaved = false;
             _connection_dict = new connection_dictionary();
-            package_file_name = string.Format("{0}.dtsx", _package.Name);
             //Executable exec = _package.Executables["FLC"];
             //Executable exec2 = (exec as IDTSSequence).Executables.Add("STOCK:ScriptTask");
         }
@@ -121,9 +96,7 @@ namespace SqlServerUtilities
             app = new Application();
             _package = new Package();
             _package.DelayValidation = true;
-            IsSaved = false;
             _connection_dict = new connection_dictionary();
-            package_file_name = string.Format("autoEtl.{0}.dtsx", DateTime.Today.ToString("YYYY-MM-DD"));
             //Executable exec = _package.Executables["FLC"];
             //Executable exec2 = (exec as IDTSSequence).Executables.Add("STOCK:ScriptTask");
         }
@@ -133,15 +106,10 @@ namespace SqlServerUtilities
         /// <returns>path of saved *.dtsx file</returns>
         public string savePackage()
         {
-            _package.Name = Path.GetFileNameWithoutExtension(package_file_name);
-            if (!IsSaved)
-            {
                 _package.Validate(_package.Connections, null, null, null);
-                app.SaveToXml(package_file_name, _package, null);
-                Console.WriteLine("\r\n\r\npackage saved to:\r\n{0}\r\n{1}", Directory.GetCurrentDirectory(), package_file_name);
-                IsSaved = true;
-            }
-            return Path.Combine(package_file_name);
+                app.SaveToXml(_package.Name, _package, null);
+                Console.WriteLine("\r\n\r\npackage saved to:\r\n{0}\r\n{1}", Directory.GetCurrentDirectory(), _package.Name);
+            return Path.Combine(_package.Name);
         }
         /// <summary>
         /// Add database connection to package.
@@ -477,32 +445,23 @@ namespace SqlServerUtilities
             return execs.ToList<Executable>();
         }
         
-        public void getExecutables()
+        public void readExecutables()
         {
             Executables execs = _package.Executables;
-            logFile = new StreamWriter(Path.Combine(CommonUtils.CommonUtils.cwd(), Path.GetFileName(package_file_name) + ".txt"));
+            logFile = new StreamWriter(Path.Combine(CommonUtils.CommonUtils.cwd(), _package.Name + ".txt"));
             string.Format("Connections:", _package.Connections.Count).Print(0, ref logFile);
             foreach (ConnectionManager item in _package.Connections)
             {
                 item.AcquireConnection(null);
                 string.Format("{0}: ({1}) {2} {3}", item.Name, item.CreationName, item.ConnectionString, item.ID).Print(0, ref logFile);
             }
-            //getExecutables(execs);
             Console.WriteLine(_package.PrecedenceConstraints);
-            List<Executable> tmp_execs = new List<Executable>();
-            //List<PrecedenceConstraint> cnsts = _package.PrecedenceConstraints.CopyTo(new ArrayList())
-            //IQueryable cnsts = _package.PrecedenceConstraints.AsQueryable();
-            Array cnsts = new PrecedenceConstraint[_package.PrecedenceConstraints.Count];
-            _package.PrecedenceConstraints.CopyTo(cnsts,0);
-            List<PrecedenceConstraint> cnsts_list = new List<PrecedenceConstraint>(cnsts as IEnumerable<PrecedenceConstraint>);
+            List<PrecedenceConstraint> cnsts_list = new List<PrecedenceConstraint>();
             PrecedenceConstraintEnumerator enm = _package.PrecedenceConstraints.GetEnumerator();
-            cnsts_list = _package.PrecedenceConstraints.AsQueryable() as List<PrecedenceConstraint>;
-            //var x = enm as IEnumerable<PrecedenceConstraint>;
-            //as IEnumerable<PrecedenceConstraint>;
-            //cnsts_list = new List<PrecedenceConstraint>(enm);
-            //List<PrecedenceConstraint> cnsts_list = cnsts.
-            //var res = from cnst in cnsts.GetEnumerator()
-            //select cnst;
+            while ((enm.MoveNext()) && (enm.Current != null))
+            {
+                cnsts_list.Add(enm.Current);
+            }
             var x = from y in cnsts_list
                     where !(from z in cnsts_list
                             select z.ConstrainedExecutable).Contains(y.PrecedenceExecutable)
@@ -512,19 +471,7 @@ namespace SqlServerUtilities
                 Console.WriteLine(item);
                 readExecutable(item);
             }
-            //_package.PrecedenceConstraints as List<PrecedenceConstraint>;
-                            //!(from cnst in _package.PrecedenceConstraints
-                                         //select 
-            foreach (PrecedenceConstraint item in _package.PrecedenceConstraints)
-            {
-                Console.WriteLine();
-                Console.WriteLine(item);
-                Console.WriteLine(item.Name);
-                Console.WriteLine(item.Parent.Name);
-                
-                Console.WriteLine(item.PrecedenceExecutable);
-                Console.WriteLine(item.ConstrainedExecutable);
-            }
+            Executable a = x.First();
         }
         public void readExecutable(Executable e)
         {
@@ -661,7 +608,7 @@ namespace SqlServerUtilities
                 string.Format("{0}: {1}", e.GetType().Name, seq.Name).Print(tabCount, ref logFile);
 
                 //Console.WriteLine(string.Format("\tGetExecutionPath() = {0}", seq.GetExecutionPath()));
-                getExecutables(seq.Executables, tabCount + 2);
+                readExecutables(seq.Executables, tabCount + 2);
             }
             else if (e.GetType() == typeof(ForEachLoop))
             {
@@ -673,7 +620,7 @@ namespace SqlServerUtilities
                 //logFile.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                 string.Format("{0}: {1}", e.GetType().Name, loop.Name).Print(tabCount, ref logFile);
 
-                getExecutables(loop.Executables, tabCount + 2);
+                readExecutables(loop.Executables, tabCount + 2);
             }
             else if (e.GetType() == typeof(ForLoop))
             {
@@ -684,7 +631,7 @@ namespace SqlServerUtilities
                 //Console.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                 //logFile.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                 string.Format("{0}: {1}", e.GetType().Name, loop.Name).Print(tabCount, ref logFile);
-                getExecutables(loop.Executables, tabCount + 2);
+                readExecutables(loop.Executables, tabCount + 2);
             }
             else if (e.GetType() == typeof(Package))
             {
@@ -695,7 +642,7 @@ namespace SqlServerUtilities
                 //Console.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                 //logFile.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                 string.Format("{0}: {1}", e.GetType().Name, loop.Name).Print(tabCount, ref logFile);
-                getExecutables(loop.Executables, tabCount + 2);
+                readExecutables(loop.Executables, tabCount + 2);
             }
             else
             {
@@ -704,11 +651,11 @@ namespace SqlServerUtilities
                 string.Format("{0}: {1}", e.GetType(), "UNHANDLED executable type").Print(tabCount, ref logFile);
             }
         }
-        public void getExecutables(Executables execs)
+        public void readExecutables(Executables execs)
         {
-            getExecutables(execs, 0);
+            readExecutables(execs, 0);
         }
-        public void getExecutables(Executables execs, int tabCount)
+        public void readExecutables(Executables execs, int tabCount)
         {
             //string tab = new string('\t', tabCount);
             //string fmt = tab + "{0}: {1}";
@@ -721,12 +668,12 @@ namespace SqlServerUtilities
                 readExecutable(e, tabCount);
             }
         }
-        public void getDestinationTables()
+        public void readDestinationTables()
         {
             DestinationTables = new List<Tuple<string, string>>();
-            getDestinationTables(_package.Executables);
+            readDestinationTables(_package.Executables);
         }
-        public void getDestinationTables(Executables execs)
+        public void readDestinationTables(Executables execs)
         {
             foreach (Executable exec in execs)
             {
@@ -847,7 +794,7 @@ namespace SqlServerUtilities
                     Sequence seq = exec as Sequence;
                     //Console.WriteLine(string.Format("\t\tName = {0}", seq.Name));
                     //Console.WriteLine(string.Format("\tGetExecutionPath() = {0}", seq.GetExecutionPath()));
-                    getDestinationTables(seq.Executables);
+                    readDestinationTables(seq.Executables);
                 }
                 else if (exec.GetType() == typeof(ForEachLoop))
                 {
@@ -855,7 +802,7 @@ namespace SqlServerUtilities
                     ForEachLoop loop = exec as ForEachLoop;
                     //Console.WriteLine(string.Format("\t\tName = {0}", loop.Name));
                     //Console.WriteLine(string.Format("\t\tGetExecutionPath() = {0}", loop.GetExecutionPath()));
-                    getDestinationTables(loop.Executables);
+                    readDestinationTables(loop.Executables);
                 }
             }
         }

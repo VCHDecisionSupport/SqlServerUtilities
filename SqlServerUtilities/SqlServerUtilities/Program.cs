@@ -253,7 +253,7 @@ namespace SqlServerUtilities
             string pkgPath = @"MSDB\Emerg\Emerg_PHC\PHCMain";
             string server = "STDBDECSUP01";
             EtlPackage pkg = new EtlPackage(pkgPath, server, null);
-            pkg.getExecutables();
+            pkg.readExecutables();
             //pkg.logFile.Close();
         }
         static void test_EtlPackage_Reader()
@@ -262,7 +262,7 @@ namespace SqlServerUtilities
             //string pkgPath = @"CommunityMart SPDBDECSUP04-STDBDECSUP01.dtsx";
             //pkgPath = Path.Combine(CommonUtils.CommonUtils.cwd(), pkgPath);
             EtlPackage pkg = new EtlPackage(pkgPath);
-            pkg.getExecutables();
+            pkg.readExecutables();
             //pkg.logFile.Close();
         }
         static void test_SchemaWriter()
@@ -410,6 +410,11 @@ namespace SqlServerUtilities
             //    Console.WriteLine(string.Format("{0} != {1}", src_table.ToString(), dst_table.ToString()));
             //}
         }
+
+        static void test_CopyObject()
+        {
+            CopyObject co = new CopyObject();
+        }
         static void Main(string[] args)
         {
             try
@@ -422,7 +427,9 @@ namespace SqlServerUtilities
                 //test_Etl_Database(databaseName);
                 //string table_name = "HoNOSFact";
                 //test_Etl_Table(table_name);
-                //test_script_extensions();
+                //test_scripting();
+                //browseMsdb();
+                test_CopyObject();
                 //test_MsdbReader();
                 //test_Etl_Table();
                 //tableDdlDiff();
@@ -431,10 +438,10 @@ namespace SqlServerUtilities
                 //    Console.WriteLine(string.Format("args[{0}] = {1}", i, args[i]));
                 //}
 
-                //test_Depend();
-                test_EtlPackage_Reader();
+                        //test_Depend();
+                        //test_EtlPackage_Reader();
 
-                stopWatch.Stop();
+                        stopWatch.Stop();
                 // Get the elapsed time as a TimeSpan value.
                 TimeSpan ts = stopWatch.Elapsed;
                 // Format and display the TimeSpan value.

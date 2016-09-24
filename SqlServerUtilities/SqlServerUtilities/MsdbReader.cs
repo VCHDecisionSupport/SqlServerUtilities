@@ -66,7 +66,7 @@ namespace SqlServerUtilities
                             try
                             {
                                 EtlPackage etl = new EtlPackage(ssisPath, this.serverName, null);
-                                etl.getDestinationTables();
+                                etl.readDestinationTables();
                                 Console.WriteLine(string.Format("{0} tables mapped.",etl.DestinationTables.Count));
                                 if (PkgTablePairs.Keys.Contains<string>(sqlPackage.Name))
                                 {

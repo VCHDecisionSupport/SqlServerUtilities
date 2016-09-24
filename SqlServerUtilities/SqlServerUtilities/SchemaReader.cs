@@ -1,6 +1,8 @@
-﻿using Microsoft.SqlServer.Management.Smo;
+﻿using Microsoft.SqlServer.Management.Common;
+using Microsoft.SqlServer.Management.Smo;
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +13,9 @@ namespace SqlServerUtilities
     {
         public static Server getServer(string server_name)
         {
-            Server server = new Server(server_name);
+            string con_str = CommonUtils.CommonUtils.getEtlConnectionString(server_name, "DSDW");
+            ServerConnection sql_con = new ServerConnection(con_str);
+            Server server = new Server(sql_con);
             if (server == null)
             {
                 throw new NullReferenceException();
