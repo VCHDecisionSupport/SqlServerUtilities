@@ -13,7 +13,7 @@ namespace SqlServerUtilities
     {
         public static Server getServer(string server_name)
         {
-            string con_str = CommonUtils.CommonUtils.getEtlConnectionString(server_name, "DSDW");
+            string con_str = CommonUtils.CommonUtils.getEtlConnectionString(server_name, "master");
             ServerConnection sql_con = new ServerConnection(con_str);
             Server server = new Server(sql_con);
             if (server == null)

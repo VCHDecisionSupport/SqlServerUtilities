@@ -382,39 +382,7 @@ namespace SqlServerUtilities
             //rdr.SaveToSqlScript();
             //rdr.InsertInto();
         }
-        static void tableDdlDiff()
-        {
-            Table src_table = SchemaReader.getTable("STDBDECSUP01", "CommunityMart", "Dim", "Date");
-            Table dst_table = SchemaReader.getTable("STDBDECSUP02", "CommunityMart", "Dim", "Date");
-            Console.WriteLine(string.Format("{0}", src_table.CompareDefinition(dst_table)));
-            //foreach (Column src_column in src_table.Columns)
-            //{
-            //    if (dst_table.Columns.Contains(src_column.Name))
-            //    {
-            //        if (dst_table.Columns[src_column.Name].DataType.ToString() == src_table.Columns[src_column.Name].DataType.ToString())
-            //        {
-            //            Console.WriteLine(string.Format("{2}-{3}\n\t{0} == {1}", src_table.ToString(), dst_table.ToString(), src_column.Name, dst_table.Columns[src_column.Name].DataType.ToString()));
-            //        }
-            //        else
-            //        {
-            //            Console.WriteLine(string.Format("{2}-{3}\n\t{0} != {1}", src_table.ToString(), dst_table.ToString(), src_column.Name, dst_table.Columns[src_column.Name].DataType.ToString()));
-            //        }
-            //    }
-            //}
-            //if (src_table.Columns.Equals(dst_table.Columns))
-            //{
-            //    Console.WriteLine(string.Format("{0} == {1}", src_table.ToString(), dst_table.ToString()));
-            //}
-            //else
-            //{
-            //    Console.WriteLine(string.Format("{0} != {1}", src_table.ToString(), dst_table.ToString()));
-            //}
-        }
-
-        static void test_CopyObject()
-        {
-            CopyObject co = new CopyObject();
-        }
+        
         static void Main(string[] args)
         {
             try
@@ -429,7 +397,7 @@ namespace SqlServerUtilities
                 //test_Etl_Table(table_name);
                 //test_scripting();
                 //browseMsdb();
-                test_CopyObject();
+                //test_CopyObject();
                 //test_MsdbReader();
                 //test_Etl_Table();
                 //tableDdlDiff();

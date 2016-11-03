@@ -122,13 +122,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CommonUtils.cs" />
-    <Compile Include="CopyObject.cs" />
-    <Compile Include="DiffExtensions.cs" />
     <Compile Include="EtlPackage.cs" />
     <Compile Include="ExcelHandler.cs" />
-    <Compile Include="IExcelHandler.cs" />
-    <Compile Include="ISchemaReader.cs" />
-    <Compile Include="ISchemaWriter.cs" />
     <Compile Include="MsdbReader.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
