@@ -19,12 +19,12 @@ namespace SqlServerUtilities
     using ExcelCellAddress = Tuple<string, uint>;
     class ExcelHandler
     {
-        private static Regex excelAddressRegex = new Regex(@"(?<column_index>[A-Za-z]+)(?<row_index>\d+)");
+        private static Regex _excelAddressRegex = new Regex(@"(?<column_index>[A-Za-z]+)(?<row_index>\d+)");
 
         public static ExcelCellAddress ParseAddressName(string addressName)
         {
-            Match regex_match = excelAddressRegex.Match(addressName);
-            ExcelCellAddress address = new ExcelCellAddress(regex_match.Groups["column_index"].Value, Convert.ToUInt32(regex_match.Groups["row_index"].Value));
+            Match regexMatch = _excelAddressRegex.Match(addressName);
+            ExcelCellAddress address = new ExcelCellAddress(regexMatch.Groups["column_index"].Value, Convert.ToUInt32(regexMatch.Groups["row_index"].Value));
             Console.WriteLine(string.Format("{0}{1}", address.Item1, address.Item2));
             return address;
         }
@@ -63,10 +63,10 @@ namespace SqlServerUtilities
                 worksheetPart.Worksheet.Save();
             }
         }
-        public static void InsertListOfText(string excel_path, List<Tuple<string, string>> entries)
+        public static void InsertListOfText(string excelPath, List<Tuple<string, string>> entries)
         {
             // Open the document for editing.
-            using (SpreadsheetDocument spreadSheet = SpreadsheetDocument.Open(excel_path, true))
+            using (SpreadsheetDocument spreadSheet = SpreadsheetDocument.Open(excelPath, true))
             {
                 // Get the SharedStringTablePart. If it does not exist, create a new one.
                 SharedStringTablePart shareStringPart;
@@ -352,12 +352,12 @@ namespace SqlServerUtilities
         //    }
         //    return entries;
         //}
-        public static DataTable readExcel(string excel_file_name, string excel_sheet_name)
+        public static DataTable ReadExcel(string excelFileName, string excelSheetName)
         {
-            string conn = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source='" + excel_file_name + "';Extended Properties='Excel 12.0;HDR=Yes';";
+            string conn = "Provider=Microsoft.ACE.OLEDB.12.0;Data Source='" + excelFileName + "';Extended Properties='Excel 12.0;HDR=Yes';";
             OleDbConnection objConn = new OleDbConnection(conn);
             objConn.Open();
-            OleDbCommand objCmdSelect = new OleDbCommand(string.Format("SELECT * FROM [{0}$]",excel_sheet_name), objConn);
+            OleDbCommand objCmdSelect = new OleDbCommand(string.Format("SELECT * FROM [{0}$]",excelSheetName), objConn);
             OleDbDataAdapter objAdapter = new OleDbDataAdapter();
             objAdapter.SelectCommand = objCmdSelect;
             DataSet objDataset = new DataSet();
@@ -375,9 +375,9 @@ namespace SqlServerUtilities
             }
             return objTable;
         }
-        public static DataTable readExcel(string excel_file_name)
+        public static DataTable ReadExcel(string excelFileName)
         {
-            return readExcel(excel_file_name, "Sheet1");
+            return ReadExcel(excelFileName, "Sheet1");
         }
     }
 }

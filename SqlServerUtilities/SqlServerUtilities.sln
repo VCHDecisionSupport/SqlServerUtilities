@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlServerUtilities", "SqlSe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PackageTableMapper", "PackageTableMapper\PackageTableMapper.csproj", "{44BF9062-9F25-482E-A9BE-37E690234EA5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BimlGenerator", "BimlGenerator\BimlGenerator.csproj", "{4ED1EA17-5130-4C05-9B98-743056381C69}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,6 +50,22 @@ Global
 		{44BF9062-9F25-482E-A9BE-37E690234EA5}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{44BF9062-9F25-482E-A9BE-37E690234EA5}.Release|x64.ActiveCfg = Release|Any CPU
 		{44BF9062-9F25-482E-A9BE-37E690234EA5}.Release|x86.ActiveCfg = Release|Any CPU
+		{4ED1EA17-5130-4C05-9B98-743056381C69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4ED1EA17-5130-4C05-9B98-743056381C69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4ED1EA17-5130-4C05-9B98-743056381C69}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{4ED1EA17-5130-4C05-9B98-743056381C69}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{4ED1EA17-5130-4C05-9B98-743056381C69}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4ED1EA17-5130-4C05-9B98-743056381C69}.Debug|x64.Build.0 = Debug|Any CPU
+		{4ED1EA17-5130-4C05-9B98-743056381C69}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4ED1EA17-5130-4C05-9B98-743056381C69}.Debug|x86.Build.0 = Debug|Any CPU
+		{4ED1EA17-5130-4C05-9B98-743056381C69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4ED1EA17-5130-4C05-9B98-743056381C69}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4ED1EA17-5130-4C05-9B98-743056381C69}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{4ED1EA17-5130-4C05-9B98-743056381C69}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{4ED1EA17-5130-4C05-9B98-743056381C69}.Release|x64.ActiveCfg = Release|Any CPU
+		{4ED1EA17-5130-4C05-9B98-743056381C69}.Release|x64.Build.0 = Release|Any CPU
+		{4ED1EA17-5130-4C05-9B98-743056381C69}.Release|x86.ActiveCfg = Release|Any CPU
+		{4ED1EA17-5130-4C05-9B98-743056381C69}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

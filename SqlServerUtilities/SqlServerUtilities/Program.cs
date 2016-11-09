@@ -12,6 +12,8 @@ using Microsoft.SqlServer.Dts.Runtime;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System.Diagnostics;
 using CommonUtils;
+using System.Data.SqlClient;
+
 namespace SqlServerUtilities
 {
     //internal class SQLVisitor : TSqlFragmentVisitor
@@ -87,33 +89,33 @@ namespace SqlServerUtilities
     {
         static void test_Etl_Database(string databaseName)
         {
-            string src_server;
-            string dst_server;
+            string srcServer;
+            string dstServer;
             EtlPackage pkg;
-            dst_server = "STDBDECSUP01";
-            src_server = "SPDBDECSUP04";
-            pkg = new EtlPackage(string.Format("{0} {1}-{2}.dtsx", databaseName, src_server, dst_server));
-            pkg.addDataFlowTasksBySchema(databaseName, "dbo", src_server, dst_server);
-            pkg.addDataFlowTasksBySchema(databaseName, "Dim", src_server, dst_server);
-            pkg.savePackage();
+            dstServer = "STDBDECSUP01";
+            srcServer = "SPDBDECSUP04";
+            pkg = new EtlPackage(string.Format("{0} {1}-{2}.dtsx", databaseName, srcServer, dstServer));
+            pkg.AddDataFlowTasksBySchema(databaseName, "dbo", srcServer, dstServer);
+            pkg.AddDataFlowTasksBySchema(databaseName, "Dim", srcServer, dstServer);
+            pkg.SavePackage();
         }
-        static void test_Etl_Table(string table_name)
+        static void test_Etl_Table(string tableName)
         {
-            string src_server_name = "STDBDECSUP03";
-            string src_database_name = "CommunityMart";
-            string src_schema_name = "dbo";
-            string src_table_name = table_name;
-            string dst_server_name = "STDBDECSUP01";
-            string dst_database_name = "CommunityMart";
-            string dst_schema_name = "dbo";
-            string dst_table_name = table_name;
-            EtlPackage pkg = new EtlPackage(string.Format("CommunityMart {0}-{1}.dtsx", src_server_name, dst_server_name));
+            string srcServerName = "STDBDECSUP03";
+            string srcDatabaseName = "CommunityMart";
+            string srcSchemaName = "dbo";
+            string srcTableName = tableName;
+            string dstServerName = "STDBDECSUP01";
+            string dstDatabaseName = "CommunityMart";
+            string dstSchemaName = "dbo";
+            string dstTableName = tableName;
+            EtlPackage pkg = new EtlPackage(string.Format("CommunityMart {0}-{1}.dtsx", srcServerName, dstServerName));
             //packageName.addDataFlowTasksBySchema("CommunityMart", "dbo", src_server, dst_server);
             //packageName.addDataFlowTasksBySchema("CommunityMart", "Dim", src_server, dst_server);
-            pkg.addDataFlowTask(src_server_name, src_database_name, src_schema_name, src_table_name, dst_server_name, dst_database_name, dst_schema_name, dst_table_name);
+            pkg.AddDataFlowTask(srcServerName, srcDatabaseName, srcSchemaName, srcTableName, dstServerName, dstDatabaseName, dstSchemaName, dstTableName);
             //packageName.addSqlTask(dst_server_name, dst_database_name, "this is task name", string.Format("TRUNCATE TABLE {0}.{1}.{2}",dst_database_name, dst_schema_name, dst_table_name));
             //packageName.addTruncatePopulate(src_server_name, src_database_name, src_schema_name, src_table_name, dst_server_name, dst_database_name, dst_schema_name, dst_table_name);
-            pkg.savePackage();
+            pkg.SavePackage();
         }
         private static void test_scripting()
         {
@@ -129,7 +131,7 @@ namespace SqlServerUtilities
             opts.ScriptSchema = true;
             opts.NoFileGroup = true;
 
-            Server server = SchemaReader.getServer("STDBDECSUP01");
+            Server server = SchemaReader.GetServer("STDBDECSUP01");
             Database database = server.Databases["DSDW"];
             //Table view = database_name.Tables["ReferralReason", "Dim"];
             Scripter scripter = new Scripter(server);
@@ -158,8 +160,8 @@ namespace SqlServerUtilities
             {
                 Console.WriteLine(obj.GetType().Name);
 
-                SqlSmoObject smo_obj = obj as SqlSmoObject;
-                Schema sch = smo_obj as Schema;
+                SqlSmoObject smoObj = obj as SqlSmoObject;
+                Schema sch = smoObj as Schema;
                 break;
                 //StringCollection str_col = scripter.Script(database_name.Schemas.GetEnumerator().Current);
                 //foreach (string sql in str_col)
@@ -171,9 +173,9 @@ namespace SqlServerUtilities
             foreach (var obj in database.Tables)
             {
                 Console.WriteLine(obj.GetType().Name);
-                SqlSmoObject smo_obj = obj as SqlSmoObject;
-                StringCollection str_col = scripter.Script(new Urn[] { smo_obj.Urn });
-                foreach (string sql in str_col)
+                SqlSmoObject smoObj = obj as SqlSmoObject;
+                StringCollection strCol = scripter.Script(new Urn[] { smoObj.Urn });
+                foreach (string sql in strCol)
                 {
                     Console.WriteLine(sql);
                 }
@@ -183,9 +185,9 @@ namespace SqlServerUtilities
             foreach (var obj in database.Views)
             {
                 Console.WriteLine(obj.GetType().Name);
-                SqlSmoObject smo_obj = obj as SqlSmoObject;
-                StringCollection str_col = scripter.Script(new Urn[] { smo_obj.Urn });
-                foreach (string sql in str_col)
+                SqlSmoObject smoObj = obj as SqlSmoObject;
+                StringCollection strCol = scripter.Script(new Urn[] { smoObj.Urn });
+                foreach (string sql in strCol)
                 {
                     Console.WriteLine(sql);
                 }
@@ -194,9 +196,9 @@ namespace SqlServerUtilities
             foreach (var obj in database.UserDefinedFunctions)
             {
                 Console.WriteLine(obj.GetType().Name);
-                SqlSmoObject smo_obj = obj as SqlSmoObject;
-                StringCollection str_col = scripter.Script(new Urn[] { smo_obj.Urn });
-                foreach (string sql in str_col)
+                SqlSmoObject smoObj = obj as SqlSmoObject;
+                StringCollection strCol = scripter.Script(new Urn[] { smoObj.Urn });
+                foreach (string sql in strCol)
                 {
                     Console.WriteLine(sql);
                 }
@@ -205,9 +207,9 @@ namespace SqlServerUtilities
             foreach (var obj in database.StoredProcedures)
             {
                 Console.WriteLine(obj.GetType().Name);
-                SqlSmoObject smo_obj = obj as SqlSmoObject;
-                StringCollection str_col = scripter.Script(new Urn[] { smo_obj.Urn });
-                foreach (string sql in str_col)
+                SqlSmoObject smoObj = obj as SqlSmoObject;
+                StringCollection strCol = scripter.Script(new Urn[] { smoObj.Urn });
+                foreach (string sql in strCol)
                 {
                     Console.WriteLine(sql);
                 }
@@ -253,7 +255,7 @@ namespace SqlServerUtilities
             string pkgPath = @"MSDB\Emerg\Emerg_PHC\PHCMain";
             string server = "STDBDECSUP01";
             EtlPackage pkg = new EtlPackage(pkgPath, server, null);
-            pkg.readExecutables();
+            pkg.ReadExecutables();
             //pkg.logFile.Close();
         }
         static void test_EtlPackage_Reader()
@@ -262,24 +264,24 @@ namespace SqlServerUtilities
             //string pkgPath = @"CommunityMart SPDBDECSUP04-STDBDECSUP01.dtsx";
             //pkgPath = Path.Combine(CommonUtils.CommonUtils.cwd(), pkgPath);
             EtlPackage pkg = new EtlPackage(pkgPath);
-            pkg.readExecutables();
+            pkg.ReadExecutables();
             //pkg.logFile.Close();
         }
         static void test_SchemaWriter()
         {
-            Table tab = SchemaReader.getTable("STDBDECSUP01", "CommunityMart", "dbo", "ReferralFact");
-            tab = SchemaReader.getTable("STDBDECSUP01", "AutoTest", "dbo", "TableProfile");
-            string tab_sql = tab.ToScript();
-            Console.WriteLine(string.Format("{0}", tab_sql));
-            StreamWriter wrtr = new StreamWriter(CommonUtils.CommonUtils.cwd() + "/tabledef.sql");
-            wrtr.Write(tab_sql);
+            Table tab = SchemaReader.GetTable("STDBDECSUP01", "CommunityMart", "dbo", "ReferralFact");
+            tab = SchemaReader.GetTable("STDBDECSUP01", "AutoTest", "dbo", "TableProfile");
+            string tabSql = tab.ToScript();
+            Console.WriteLine(string.Format("{0}", tabSql));
+            StreamWriter wrtr = new StreamWriter(CommonUtils.CommonUtils.Cwd() + "/tabledef.sql");
+            wrtr.Write(tabSql);
             wrtr.Close();
         }
         public static void test_Depend()
         {
-            Table tab = SchemaReader.getTable("STDBDECSUP01", "CommunityMart", "dbo", "ReferralFact");
-            tab = SchemaReader.getTable("STDBDECSUP01", "AutoTest", "dbo", "TableProfile");
-            DependencyWalker wkr = new DependencyWalker(SchemaReader.getServer("STDBDECSUP01"));
+            Table tab = SchemaReader.GetTable("STDBDECSUP01", "CommunityMart", "dbo", "ReferralFact");
+            tab = SchemaReader.GetTable("STDBDECSUP01", "AutoTest", "dbo", "TableProfile");
+            DependencyWalker wkr = new DependencyWalker(SchemaReader.GetServer("STDBDECSUP01"));
             DependencyTree tree = wkr.DiscoverDependencies(new[] { tab as SqlSmoObject }, DependencyType.Children);
             DependencyTreeNode node;// = tree;
             if (tree.HasChildNodes)
@@ -299,13 +301,13 @@ namespace SqlServerUtilities
                     node.Urn.Type.Print();
                     node.Urn.Value.Print();
                 }
-                    //node = node.NextSibling;
-                    //node.Print();
-                    //node.Urn.Print();
-                    //node.GetType().Print();
-                    //node.Urn.Type.Print();
-                    //node.Urn.Value.Print();
-                }
+                //node = node.NextSibling;
+                //node.Print();
+                //node.Urn.Print();
+                //node.GetType().Print();
+                //node.Urn.Type.Print();
+                //node.Urn.Value.Print();
+            }
             //tree.HasChildNodes.Print();
             //Urn urn = tree.FirstChild.Urn;
             //urn.Print();
@@ -313,7 +315,7 @@ namespace SqlServerUtilities
             //tree.Print();
 
         }
-        static void browseMsdb()
+        static void BrowseMsdb()
         {
             string sqlFolder;
             string sqlServer;
@@ -382,34 +384,28 @@ namespace SqlServerUtilities
             //rdr.SaveToSqlScript();
             //rdr.InsertInto();
         }
-        
+        static void test_ViewToTable()
+        {
+            View view = SchemaReader.GetView("STDBDECSUP01", "gcDev", "dbo", "vwTypeTest");
+            Console.WriteLine(view.ToTableScript("TypeTest"));
+        }
+
         static void Main(string[] args)
         {
             try
             {
                 Stopwatch stopWatch = new Stopwatch();
                 stopWatch.Start();
-                CommonUtils.CommonUtils.preExecutionSetup();
+                CommonUtils.CommonUtils.PreExecutionSetup();
 
-                //string databaseName = "CommunityMart";
-                //test_Etl_Database(databaseName);
-                //string table_name = "HoNOSFact";
-                //test_Etl_Table(table_name);
-                //test_scripting();
-                //browseMsdb();
-                //test_CopyObject();
-                //test_MsdbReader();
-                //test_Etl_Table();
-                //tableDdlDiff();
-                //for (int i = 0; i < args.Count(); i++)
-                //{
-                //    Console.WriteLine(string.Format("args[{0}] = {1}", i, args[i]));
-                //}
+                Server server = SchemaReader.GetServer("STDBDECSUP01");
+                Database database = server.Databases["DSDW"];
+                test_ViewToTable();
 
-                        //test_Depend();
-                        //test_EtlPackage_Reader();
 
-                        stopWatch.Stop();
+                //SqlConnection sql_connection = SchemaReader.getSqlConnection("STDBDECSUP01");
+
+                stopWatch.Stop();
                 // Get the elapsed time as a TimeSpan value.
                 TimeSpan ts = stopWatch.Elapsed;
                 // Format and display the TimeSpan value.

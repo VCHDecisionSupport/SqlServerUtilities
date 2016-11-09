@@ -9,7 +9,7 @@ namespace PackageTableMapper
 {
     class Program
     {
-        static void Parse_MsdbEtl(int TestTypeID)
+        static void Parse_MsdbEtl(int testTypeId)
         {
             string serverName = Environment.MachineName;
             Console.WriteLine("current MachineName: {0}", serverName);
@@ -20,7 +20,7 @@ namespace PackageTableMapper
                 serverName = "STDBDECSUP01";
             }
             string databaseName = "MSDB";
-            MsdbReader rdr = new MsdbReader(serverName, databaseName, TestTypeID);
+            MsdbReader rdr = new MsdbReader(serverName, databaseName, testTypeId);
             rdr.BreadthFirstCrawl();
             foreach (string key in rdr.PkgTablePairs.Keys)
             {
@@ -39,17 +39,17 @@ namespace PackageTableMapper
         static void Main(string[] args)
         {
             Console.WriteLine(string.Format("USAGE example:\nPackageTableMapper TestTypeID=#\nwhere # is 0, 1, 2, or 3"));
-            int TestTypeID = 3;
+            int testTypeId = 3;
             if (args.Count() == 0)
             {
-                Console.WriteLine(string.Format("TestTypeID not specified.  Default is {0}.", TestTypeID));
-                Parse_MsdbEtl(TestTypeID);
+                Console.WriteLine(string.Format("TestTypeID not specified.  Default is {0}.", testTypeId));
+                Parse_MsdbEtl(testTypeId);
             }
             else
             {
                 Console.WriteLine(string.Format("given argument: '{0}'", args[0]));
-                TestTypeID = int.Parse(args[0].Split('=')[1].Trim());
-                Parse_MsdbEtl(TestTypeID);
+                testTypeId = int.Parse(args[0].Split('=')[1].Trim());
+                Parse_MsdbEtl(testTypeId);
             }
         }
     }

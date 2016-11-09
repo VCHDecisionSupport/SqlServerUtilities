@@ -13,53 +13,53 @@ namespace PackageTableMapper
 {
     public class MsdbReader
     {
-        string serverName { get; set; }
-        string rootDtsFolder { get; set; }
-        string outfile { get; set; }
-        Application ssisApplication { get; set; }
+        string ServerName { get; set; }
+        string RootDtsFolder { get; set; }
+        string Outfile { get; set; }
+        Application SsisApplication { get; set; }
         public Dictionary<string, List<Tuple<string, string>>> PkgTablePairs { get; set; }
-        public Dictionary<string, List<Tuple<string, string>>> tempPkgTablePairs { get; set; }
-        int TestTypeID { get; set; }
+        public Dictionary<string, List<Tuple<string, string>>> TempPkgTablePairs { get; set; }
+        int TestTypeId { get; set; }
         public MsdbReader()
         {
-            this.serverName = "STDBDECSUP01";
-            this.rootDtsFolder = "MSDB";
-            this.outfile = Path.Combine(CommonUtils.CommonUtils.cwd(), string.Format("PkgTableMapping_{0}_{1}.sql", serverName, rootDtsFolder));
-            ssisApplication = new Application();
+            this.ServerName = "STDBDECSUP01";
+            this.RootDtsFolder = "MSDB";
+            this.Outfile = Path.Combine(CommonUtils.CommonUtils.Cwd(), string.Format("PkgTableMapping_{0}_{1}.sql", ServerName, RootDtsFolder));
+            SsisApplication = new Application();
 
         }
         public MsdbReader(string serverName)
         {
-            this.serverName = serverName;
-            this.rootDtsFolder = "MSDB";
-            this.outfile = Path.Combine(CommonUtils.CommonUtils.cwd(), string.Format("PkgTableMapping_{0}_{1}.sql", serverName, rootDtsFolder));
-            ssisApplication = new Application();
+            this.ServerName = serverName;
+            this.RootDtsFolder = "MSDB";
+            this.Outfile = Path.Combine(CommonUtils.CommonUtils.Cwd(), string.Format("PkgTableMapping_{0}_{1}.sql", serverName, RootDtsFolder));
+            SsisApplication = new Application();
         }
         public MsdbReader(string serverName, string rootDtsFolder)
         {
-            this.serverName = serverName;
-            this.rootDtsFolder = rootDtsFolder;
-            this.outfile = Path.Combine(CommonUtils.CommonUtils.cwd(), string.Format("PkgTableMapping_{0}_{1}.sql", serverName, rootDtsFolder));
-            ssisApplication = new Application();
+            this.ServerName = serverName;
+            this.RootDtsFolder = rootDtsFolder;
+            this.Outfile = Path.Combine(CommonUtils.CommonUtils.Cwd(), string.Format("PkgTableMapping_{0}_{1}.sql", serverName, rootDtsFolder));
+            SsisApplication = new Application();
         }
-        public MsdbReader(string serverName, string rootDtsFolder, int TestTypeID)
+        public MsdbReader(string serverName, string rootDtsFolder, int testTypeId)
         {
-            this.serverName = serverName;
-            this.rootDtsFolder = rootDtsFolder;
-            this.TestTypeID = TestTypeID;
-            this.outfile = Path.Combine(CommonUtils.CommonUtils.cwd(), string.Format("PkgTableMapping_{0}_{1}.sql", serverName, rootDtsFolder));
-            ssisApplication = new Application();
+            this.ServerName = serverName;
+            this.RootDtsFolder = rootDtsFolder;
+            this.TestTypeId = testTypeId;
+            this.Outfile = Path.Combine(CommonUtils.CommonUtils.Cwd(), string.Format("PkgTableMapping_{0}_{1}.sql", serverName, rootDtsFolder));
+            SsisApplication = new Application();
         }
         public void BreadthFirstCrawl()
         {
             PkgTablePairs = new Dictionary<string, List<Tuple<string, string>>>();
-            tempPkgTablePairs = new Dictionary<string, List<Tuple<string, string>>>();
-            BreadthFirstCrawl(rootDtsFolder);
+            TempPkgTablePairs = new Dictionary<string, List<Tuple<string, string>>>();
+            BreadthFirstCrawl(RootDtsFolder);
         }
         public void BreadthFirstCrawl(string dtsPath)
         {
             PackageInfos sqlPackages;
-            sqlPackages = ssisApplication.GetDtsServerPackageInfos(dtsPath, this.serverName);
+            sqlPackages = SsisApplication.GetDtsServerPackageInfos(dtsPath, this.ServerName);
             bool cont = true;
             if (sqlPackages.Count > 0 && cont)
             {
@@ -67,32 +67,32 @@ namespace PackageTableMapper
                 foreach (PackageInfo sqlPackage in sqlPackages)
                 {
                     string ssisPath = Path.Combine(dtsPath, sqlPackage.Name);
-                    if (!ssisApplication.FolderExistsOnDtsServer(ssisPath, this.serverName))
+                    if (!SsisApplication.FolderExistsOnDtsServer(ssisPath, this.ServerName))
                     {
                         Console.WriteLine(string.Format("{0} is a package", sqlPackage.Name));
                         //if (sqlPackage.Name == "PopulateCommunityMart")
                         {
                             try
                             {
-                                EtlPackage etl = new EtlPackage(ssisPath, this.serverName, null);
-                                etl.getDestinationTables();
+                                EtlPackage etl = new EtlPackage(ssisPath, this.ServerName, null);
+                                etl.GetDestinationTables();
                                 Console.WriteLine(string.Format("{0} tables mapped.",etl.DestinationTables.Count));
                                 if (PkgTablePairs.Keys.Contains<string>(sqlPackage.Name))
                                 {
                                     PkgTablePairs[sqlPackage.Name].AddRange(etl.DestinationTables);
-                                    tempPkgTablePairs[sqlPackage.Name].AddRange(etl.DestinationTables);
+                                    TempPkgTablePairs[sqlPackage.Name].AddRange(etl.DestinationTables);
 
                                 }
                                 else
                                 {
                                     PkgTablePairs.Add(sqlPackage.Name, etl.DestinationTables);
-                                    tempPkgTablePairs.Add(sqlPackage.Name, etl.DestinationTables);
+                                    TempPkgTablePairs.Add(sqlPackage.Name, etl.DestinationTables);
                                     //cont = false;
                                     //break;
                                 }
                                 
-                                InsertInto(tempPkgTablePairs);
-                                tempPkgTablePairs = new Dictionary<string, List<Tuple<string, string>>>();
+                                InsertInto(TempPkgTablePairs);
+                                TempPkgTablePairs = new Dictionary<string, List<Tuple<string, string>>>();
                             }
                             catch (Exception)
                             {
@@ -110,7 +110,7 @@ namespace PackageTableMapper
                 foreach (PackageInfo sqlPackage in sqlPackages)
                 {
                     string ssisPath = Path.Combine(dtsPath, sqlPackage.Name);
-                    if (ssisApplication.FolderExistsOnDtsServer(ssisPath, this.serverName) && cont)
+                    if (SsisApplication.FolderExistsOnDtsServer(ssisPath, this.ServerName) && cont)
                     {
                         Console.WriteLine(string.Format("\t{0} is a folder", ssisPath));
                         BreadthFirstCrawl(ssisPath);
@@ -130,7 +130,7 @@ namespace PackageTableMapper
         }
         public void SaveToSqlScript(string destinationTableName)
         {
-            StreamWriter fout = new StreamWriter(this.outfile);
+            StreamWriter fout = new StreamWriter(this.Outfile);
             foreach (string key in PkgTablePairs.Keys)
             {
                 foreach (var databaseTable in PkgTablePairs[key])
@@ -170,7 +170,7 @@ namespace PackageTableMapper
 "UPDATE SET  \n" +
 "dst.PackageID = map.PkgID \n" +
 "WHEN NOT MATCHED THEN \n" +
-"INSERT VALUEs (map.PkgID, map.objectID, {3});", key, tableName, databaseName, TestTypeID);
+"INSERT VALUEs (map.PkgID, map.objectID, {3});", key, tableName, databaseName, TestTypeId);
                     fout.WriteLine(sql);
                 }
             }
@@ -186,7 +186,7 @@ namespace PackageTableMapper
                 }
                 pkgTablePairs = this.PkgTablePairs;
             }
-            string connectionString = CommonUtils.CommonUtils.getSqlConnectionString(this.serverName, "DQMF");
+            string connectionString = CommonUtils.CommonUtils.GetSqlConnectionString(this.ServerName, "DQMF");
             Console.WriteLine(string.Format("connecting to DQMF"));
             System.Data.SqlClient.SqlConnection sqlConnection1 = new System.Data.SqlClient.SqlConnection(connectionString);
 
@@ -224,7 +224,7 @@ namespace PackageTableMapper
 "UPDATE SET  \n" +
 "dst.PackageID = map.PkgID \n" +
 "WHEN NOT MATCHED THEN \n" +
-"INSERT VALUES (map.PkgID, map.objectID, {0});", this.TestTypeID);
+"INSERT VALUES (map.PkgID, map.objectID, {0});", this.TestTypeId);
             Console.WriteLine(string.Format("{0}", cmd.CommandText));
             SqlParameter PackageName = new SqlParameter("@packageName", SqlDbType.VarChar, 200);
             cmd.Parameters.Add(PackageName);

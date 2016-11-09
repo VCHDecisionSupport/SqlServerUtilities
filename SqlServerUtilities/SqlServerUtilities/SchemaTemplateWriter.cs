@@ -10,8 +10,8 @@ namespace SqlServerUtilities
 {
     public class SchemaTemplateWriter
     {
-        public Database dst_database { get; private set; }
-        public Server dst_server { get; private set; }
+        public Database DstDatabase { get; private set; }
+        public Server DstServer { get; private set; }
         /// <summary>
         /// dst_database, dst_server given.
         /// objects will be created on server and database
@@ -20,23 +20,23 @@ namespace SqlServerUtilities
         /// <param name="database"></param>
         public SchemaTemplateWriter(Server server, Database database)
         {
-            dst_server = server;
-            dst_database = database;
+            DstServer = server;
+            DstDatabase = database;
         }
-        public SchemaTemplateWriter(string server_name, string database_name)
+        public SchemaTemplateWriter(string serverName, string databaseName)
         {
-            dst_server = new Server(server_name);
-            dst_database = new Database(dst_server, database_name);
+            DstServer = new Server(serverName);
+            DstDatabase = new Database(DstServer, databaseName);
         }
         public SchemaTemplateWriter(Database database)
         {
-            dst_server = database.Parent;
-            dst_database = database;
+            DstServer = database.Parent;
+            DstDatabase = database;
         }
-        public SchemaTemplateWriter(Server server, string database_name)
+        public SchemaTemplateWriter(Server server, string databaseName)
         {
-            dst_server = server;
-            dst_database = new Database(dst_server, database_name);
+            DstServer = server;
+            DstDatabase = new Database(DstServer, databaseName);
         }
         //public string CreateAll()
         //{
@@ -44,58 +44,58 @@ namespace SqlServerUtilities
         //    script += dst_database.ToScript();
         //    return script;
         //}
-        public Schema AddSchema(Schema src_schema)
+        public Schema AddSchema(Schema srcSchema)
         {
-             Schema dst_schema;
-            if (!dst_database.Schemas.Contains(src_schema.Name))
+             Schema dstSchema;
+            if (!DstDatabase.Schemas.Contains(srcSchema.Name))
             {
-                dst_schema = new Schema(dst_database, src_schema.Name);
-                dst_schema.Create();
+                dstSchema = new Schema(DstDatabase, srcSchema.Name);
+                dstSchema.Create();
             }
             else
             {
-                dst_schema = dst_database.Schemas[src_schema.Name];
+                dstSchema = DstDatabase.Schemas[srcSchema.Name];
             }
-            return dst_schema;
+            return dstSchema;
         }
-        public Schema AddSchema(string src_schema_name)
+        public Schema AddSchema(string srcSchemaName)
         {
-            Schema dst_schema;
-            if (!dst_database.Schemas.Contains(src_schema_name))
+            Schema dstSchema;
+            if (!DstDatabase.Schemas.Contains(srcSchemaName))
             {
-                dst_schema = new Schema(dst_database, src_schema_name);
+                dstSchema = new Schema(DstDatabase, srcSchemaName);
                 //dst_schema.Create();
             }
             else
             {
-                dst_schema = dst_database.Schemas[src_schema_name];
+                dstSchema = DstDatabase.Schemas[srcSchemaName];
             }
-            return dst_schema;
+            return dstSchema;
         }
-        public Table AddTable(Table src_table)
+        public Table AddTable(Table srcTable)
         {
-            AddSchema(src_table.Schema);
-            Table dst_table = new Table(dst_database, src_table.Name, src_table.Schema);
-            foreach (Column src_column in src_table.Columns)
+            AddSchema(srcTable.Schema);
+            Table dstTable = new Table(DstDatabase, srcTable.Name, srcTable.Schema);
+            foreach (Column srcColumn in srcTable.Columns)
             {
-                Column dst_column = new Column(dst_table, src_column.Name, src_column.DataType);
-                dst_column.Nullable = src_column.Nullable;
-                dst_column.Identity = src_column.Identity;
-                dst_column.Default = src_column.Default;
-                if (src_column.Identity)
+                Column dstColumn = new Column(dstTable, srcColumn.Name, srcColumn.DataType);
+                dstColumn.Nullable = srcColumn.Nullable;
+                dstColumn.Identity = srcColumn.Identity;
+                dstColumn.Default = srcColumn.Default;
+                if (srcColumn.Identity)
                 {
-                    dst_column.IdentitySeed = src_column.IdentitySeed;
-                    dst_column.IdentityIncrement = src_column.IdentityIncrement;
+                    dstColumn.IdentitySeed = srcColumn.IdentitySeed;
+                    dstColumn.IdentityIncrement = srcColumn.IdentityIncrement;
                 }
-                dst_table.Columns.Add(dst_column);
+                dstTable.Columns.Add(dstColumn);
                 //dst_table.Create();
             }
-            if (dst_database.Tables.Contains(dst_table.Name, dst_table.Schema))
+            if (DstDatabase.Tables.Contains(dstTable.Name, dstTable.Schema))
             {
                 Console.WriteLine("CREATE added it to a collection that had already be created");
             }
-            Console.WriteLine(dst_table.ToScript());
-            return dst_table;
+            Console.WriteLine(dstTable.ToScript());
+            return dstTable;
         }
     }
 }

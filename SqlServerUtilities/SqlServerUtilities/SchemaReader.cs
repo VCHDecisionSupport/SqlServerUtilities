@@ -11,37 +11,83 @@ namespace SqlServerUtilities
 {
     public static class SchemaReader
     {
-        public static Server getServer(string server_name)
+        public static SqlConnection GetSqlConnection(string server)
         {
-            string con_str = CommonUtils.CommonUtils.getEtlConnectionString(server_name, "master");
-            ServerConnection sql_con = new ServerConnection(con_str);
-            Server server = new Server(sql_con);
+            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
+            builder.DataSource = server;
+            builder.IntegratedSecurity = true;
+            SqlConnection sqlConnection = new SqlConnection(builder.ConnectionString);
+            sqlConnection.Open();
+            ServerConnection serverConnection = new ServerConnection(sqlConnection);
+            return sqlConnection;
+        }
+        public static Server GetServer(string serverName)
+        {
+            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
+            builder.DataSource = serverName;
+            builder.IntegratedSecurity = true;
+            SqlConnection sqlConnection = new SqlConnection(builder.ConnectionString);
+            sqlConnection.Open();
+            ServerConnection serverConnection = new ServerConnection(sqlConnection);
+            Server server = new Server(serverConnection);
             if (server == null)
             {
                 throw new NullReferenceException();
             }
             return server;
         }
-        public static Database getDatabase(string server_name, string database_name)
+        public static Database GetDatabase(string serverName, string databaseName)
         {
-            Server server = getServer(server_name);
-            Database database = server.Databases[database_name];
+            Server server = GetServer(serverName);
+            Database database = server.Databases[databaseName];
             if (database == null)
             {
                 throw new NullReferenceException();
             }
             return database;
         }
-        public static Table getTable(string server_name, string database_name, string schema_name, string table_name)
+        
+        public static Table GetTable(string serverName, string databaseName, string schemaName, string tableName)
         {
-            Database database = getDatabase(server_name, database_name);
-            Table table = database.Tables[table_name, schema_name];
+            Database database = GetDatabase(serverName, databaseName);
+            Table table = database.Tables[tableName, schemaName];
             if (table == null)
             {
                 throw new NullReferenceException();
             }
             return table;
         }
+        public static View GetView(string serverName, string databaseName, string schemaName, string viewName)
+        {
+            Database database = GetDatabase(serverName, databaseName);
+            View view = database.Views[viewName, schemaName];
+            if (view == null)
+            {
+                throw new NullReferenceException();
+            }
+            return view;
+        }
 
+        public static ColumnCollection GetColumns(string serverName, string databaseName, string schemaName, string objectName)
+        {
+            Database database = GetDatabase(serverName, databaseName);
+            View view = database.Views[objectName, schemaName];
+            if (view == null)
+            {
+                Table table = database.Tables[objectName, schemaName];
+                if(table == null)
+                {
+                    throw new NullReferenceException();
+                }
+                else
+                {
+                    return table.Columns;
+                }
+            }
+            else
+            {
+                return view.Columns;
+            }
+        }
     }
 }

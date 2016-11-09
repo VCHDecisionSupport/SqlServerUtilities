@@ -34,35 +34,35 @@ namespace SqlServerUtilities
             ScriptingOptions opts = new ScriptingOptions();
             return scripter;
         }
-        public static string AsString(this StringCollection string_collection)
+        public static string AsString(this StringCollection stringCollection)
         {
             string ret = "";
-            foreach (string str in string_collection)
+            foreach (string str in stringCollection)
             {
                 ret += "\n" + str;
             }
             return ret;
         }
-        public static string GetSchemaObjectName(this SqlSmoObject smo_object)
+        public static string GetSchemaObjectName(this SqlSmoObject smoObject)
         {
-            if (typeof(Table) == smo_object.GetType())
+            if (typeof(Table) == smoObject.GetType())
             {
-                Table table = smo_object as Table;
+                Table table = smoObject as Table;
                 return string.Format("{0}.{1}", table.Schema, table.Name);
             }
-            if (typeof(StoredProcedure) == smo_object.GetType())
+            if (typeof(StoredProcedure) == smoObject.GetType())
             {
-                StoredProcedure proc = smo_object as StoredProcedure;
+                StoredProcedure proc = smoObject as StoredProcedure;
                 return string.Format("{0}.{1}", proc.Schema, proc.Name);
             }
-            if (typeof(View) == smo_object.GetType())
+            if (typeof(View) == smoObject.GetType())
             {
-                View view = smo_object as View;
+                View view = smoObject as View;
                 return string.Format("{0}.{1}", view.Schema, view.Name);
             }
-            if (typeof(UserDefinedFunction) == smo_object.GetType())
+            if (typeof(UserDefinedFunction) == smoObject.GetType())
             {
-                UserDefinedFunction func = smo_object as UserDefinedFunction;
+                UserDefinedFunction func = smoObject as UserDefinedFunction;
                 return string.Format("{0}.{1}", func.Schema, func.Name);
             }
             return "";
@@ -88,10 +88,56 @@ namespace SqlServerUtilities
             sql = scrtr.Script(new[] { table as SqlSmoObject }).AsString();
             return sql;
         }
+        public static string ToScript(this Column column)
+        {
+            string desc = "";
+            // precision and 
+            if (new List<SqlDataType> { SqlDataType.Char, SqlDataType.VarChar, SqlDataType.NVarChar }.Contains(column.DataType.SqlDataType))
+            {
+                desc = string.Format("{0}({1})", column.DataType.ToString(), column.DataType.MaximumLength);
+            }
+            else if (new List<SqlDataType> { SqlDataType.Decimal, SqlDataType.Float, SqlDataType.Numeric }.Contains(column.DataType.SqlDataType))
+            {
+                if (column.DataType.NumericScale == 0)
+                {
+                    desc = string.Format("{0}({1})", column.DataType.ToString(), column.DataType.NumericPrecision);
+                }
+                else
+                {
+                    desc = string.Format("{0}({1},{2})", column.DataType.ToString(), column.DataType.NumericPrecision, column.DataType.NumericScale);
+                }
+            }
+            else
+            {
+                desc = column.DataType.ToString();
+            }
+            return desc;
+        }
+        public static string ToTableScript(this View view, string tableName)
+        {
+            Column col = view.Columns[0];
+            string sql = string.Format("CREATE TABLE {0} (\n\t{1}", tableName, string.Format("{0} {1}", col.Name, col.ToScript()));
 
+            for (int i = 1; i < view.Columns.Count; i++)
+            {
+                sql += string.Format("\n\t,{0} {1}", view.Columns[i].Name, view.Columns[i].ToScript());
+            }
+            sql += string.Format("\n);");
+            return sql;
+        }
+        public static string ToTableScript(this View view, string tableName, string schemaName)
+        {
+            Column col = view.Columns[0];
+            string sql = string.Format("CREATE TABLE {2}.{0} (\n\t{1}", schemaName, tableName, string.Format("{0} {1}", col.Name, col.ToScript()));
 
+            for (int i = 1; i < view.Columns.Count; i++)
+            {
+                sql += string.Format("\n\t,{0} {1}", view.Columns[i].Name, view.Columns[i].ToScript());
+            }
+            sql += string.Format("\n);");
+            return sql;
+        }
     }
-
 
 
 

@@ -27,33 +27,33 @@ namespace PackageTableMapper
     public class EtlPackage
     {
         private Package _package;
-        private connection_dictionary _connection_dict;
-        private string _package_file_name;
-        private Regex connection_string_regex = new Regex(@"Data Source=(?<server_name>\w+);Initial Catalog=(?<database_name>\w+);Provider=SQLOLEDB.1;Integrated Security=SSPI;");
+        private connection_dictionary _connectionDict;
+        private string _packageFileName;
+        private Regex _connectionStringRegex = new Regex(@"Data Source=(?<server_name>\w+);Initial Catalog=(?<database_name>\w+);Provider=SQLOLEDB.1;Integrated Security=SSPI;");
         public bool IsSaved { get; set; }
-        public Application app { get; set; }
+        public Application App { get; set; }
         public List<Tuple<string,string>> DestinationTables;
-        public string package_file_name
+        public string PackageFileName
         {
             get
             {
-                if (_package_file_name == null)
+                if (_packageFileName == null)
                 {
                     return string.Format("autoEtl.{0}.dtsx", DateTime.Today.ToString("YYYY-MM-DD"));
                 }
                 else
                 {
-                    return _package_file_name;
+                    return _packageFileName;
                 }
             }
             set
             {
-                _package_file_name = value;
+                _packageFileName = value;
             }
         }
-        public string cleanSsisTaskName(string task_name)
+        public string CleanSsisTaskName(string taskName)
         {
-            return Regex.Replace(task_name, @"[\[\]\\\.]", "", RegexOptions.None, TimeSpan.FromSeconds(1.5));
+            return Regex.Replace(taskName, @"[\[\]\\\.]", "", RegexOptions.None, TimeSpan.FromSeconds(1.5));
         }
         //public EtlPackage(string src_server_name, string dst_server_name, string database_name)
         //{
@@ -64,74 +64,74 @@ namespace PackageTableMapper
         //    package_file_name = string.Format("{0} {1}-{2}.dtsx", database_name, src_server_name, dst_server_name);
         //    addDataFlowTasksBySchema(database_name, src_server_name, dst_server_name);
         //}
-        public EtlPackage(string file_name)
+        public EtlPackage(string fileName)
         {
             _package = new Package();
-            app = new Application();
+            App = new Application();
 
             _package.DelayValidation = true;
             IsSaved = false;
-            _connection_dict = new connection_dictionary();
-            package_file_name = file_name;
+            _connectionDict = new connection_dictionary();
+            PackageFileName = fileName;
         }
         public EtlPackage(string ssisPath, string serverName, IDTSEvents events)
         {
-            app = new Application();
+            App = new Application();
 
-            _package = app.LoadFromDtsServer(ssisPath, serverName, events);
+            _package = App.LoadFromDtsServer(ssisPath, serverName, events);
             _package.DelayValidation = true;
             IsSaved = false;
-            _connection_dict = new connection_dictionary();
-            package_file_name = string.Format("{0}.dtsx", _package.Name);
+            _connectionDict = new connection_dictionary();
+            PackageFileName = string.Format("{0}.dtsx", _package.Name);
             //Executable exec = _package.Executables["FLC"];
             //Executable exec2 = (exec as IDTSSequence).Executables.Add("STOCK:ScriptTask");
         }
         public EtlPackage()
         {
-            app = new Application();
+            App = new Application();
             _package = new Package();
             _package.DelayValidation = true;
             IsSaved = false;
-            _connection_dict = new connection_dictionary();
-            package_file_name = string.Format("autoEtl.{0}.dtsx", DateTime.Today.ToString("YYYY-MM-DD"));
+            _connectionDict = new connection_dictionary();
+            PackageFileName = string.Format("autoEtl.{0}.dtsx", DateTime.Today.ToString("YYYY-MM-DD"));
             //Executable exec = _package.Executables["FLC"];
             //Executable exec2 = (exec as IDTSSequence).Executables.Add("STOCK:ScriptTask");
         }
 
-        public string savePackage()
+        public string SavePackage()
         {
-            return savePackage(package_file_name);
+            return SavePackage(PackageFileName);
         }
-        public string savePackage(string package_name)
+        public string SavePackage(string packageName)
         {
-            package_file_name = package_name;
-            _package.Name = Path.GetFileNameWithoutExtension(package_file_name);
+            PackageFileName = packageName;
+            _package.Name = Path.GetFileNameWithoutExtension(PackageFileName);
             if (!IsSaved)
             {
                 _package.Validate(_package.Connections, null, null, null);
-                app.SaveToXml(package_name, _package, null);
-                Console.WriteLine("\r\n\r\npackage saved to:\r\n{0}\r\n{1}", Directory.GetCurrentDirectory(), package_name);
+                App.SaveToXml(packageName, _package, null);
+                Console.WriteLine("\r\n\r\npackage saved to:\r\n{0}\r\n{1}", Directory.GetCurrentDirectory(), packageName);
                 IsSaved = true;
             }
-            return Path.Combine(package_name);
+            return Path.Combine(packageName);
         }
-        public string addConnection(Database database)
+        public string AddConnection(Database database)
         {
-            string server_name = database.Parent.Name;
-            string database_name = database.Name;
-            string connection_name = string.Format("{0}-{1}", cleanSsisTaskName(server_name), cleanSsisTaskName(database_name));
-            if (_connection_dict.ContainsKey(connection_name))
+            string serverName = database.Parent.Name;
+            string databaseName = database.Name;
+            string connectionName = string.Format("{0}-{1}", CleanSsisTaskName(serverName), CleanSsisTaskName(databaseName));
+            if (_connectionDict.ContainsKey(connectionName))
             {
-                return connection_name;
+                return connectionName;
             }
             else
             {
                 ConnectionManager newConnectionManager = _package.Connections.Add("OLEDB");
-                newConnectionManager.Name = connection_name;
-                string connection_string = CommonUtils.CommonUtils.getEtlConnectionString(server_name, database_name);
-                newConnectionManager.ConnectionString = connection_string;
-                _connection_dict.Add(connection_name, connection_string);
-                return connection_name;
+                newConnectionManager.Name = connectionName;
+                string connectionString = CommonUtils.CommonUtils.GetEtlConnectionString(serverName, databaseName);
+                newConnectionManager.ConnectionString = connectionString;
+                _connectionDict.Add(connectionName, connectionString);
+                return connectionName;
             }
             ////cleanSsisTaskName(database_name) + "-" + cleanSsisTaskName(database_name);
 
@@ -168,18 +168,18 @@ namespace PackageTableMapper
             //}
             //return connection_name;
         }
-        public string addConnection(Table table)
+        public string AddConnection(Table table)
         {
             Database database = table.Parent;
             Server server = database.Parent;
-            return addConnection(server.Name, database.Name);
+            return AddConnection(server.Name, database.Name);
         }
-        public string addConnection(string server_name, string database_name)
+        public string AddConnection(string serverName, string databaseName)
         {
-            Database database = SchemaReader.getDatabase(server_name, database_name);
-            return addConnection(database);
+            Database database = SchemaReader.GetDatabase(serverName, databaseName);
+            return AddConnection(database);
         }
-        public string getTaskName()
+        public string GetTaskName()
         {
             return "";
         }
@@ -187,23 +187,23 @@ namespace PackageTableMapper
         /// Root implementation creation of a new Data Flow Task from src_table to dst_table in execs container.  All other addDataFlowTask methods overload this method.
         /// </summary>
         /// <param name="execs">Container for executable tasks.</param>
-        /// <param name="src_table"></param>
-        /// <param name="dst_table"></param>
+        /// <param name="srcTable"></param>
+        /// <param name="dstTable"></param>
         /// <returns></returns>
-        public TaskHost addDataFlowTask(Executables execs, Table src_table, Table dst_table)
+        public TaskHost AddDataFlowTask(Executables execs, Table srcTable, Table dstTable)
         {
             // initialize required connections
-            string _src_cm_name = addConnection(src_table);
-            string _dst_cm_name = addConnection(dst_table);
-            string _src_server_name = src_table.Parent.Parent.Name;
-            string _dst_server_name = dst_table.Parent.Parent.Name;
+            string srcCmName = AddConnection(srcTable);
+            string dstCmName = AddConnection(dstTable);
+            string srcServerName = srcTable.Parent.Parent.Name;
+            string dstServerName = dstTable.Parent.Parent.Name;
             //Console.WriteLine("\r\n{0}.{1}.{2}.{3} -->> {4}.{5}.{6}.{7}", src_table.Parent.Parent.ToString(), src_table.Parent.ToString(), src_table.Schema, src_table.Name, dst_table.Parent.Parent.ToString(), dst_table.Parent.ToString(), dst_table.Schema, dst_table.Name);
 
             /* ADD DATA FLOW TASK */
 
             Executable e = execs.Add("STOCK:PipelineTask");
             TaskHost th = e as TaskHost;
-            th.Name = cleanSsisTaskName(src_table.Name);
+            th.Name = CleanSsisTaskName(srcTable.Name);
             MainPipe dataFlowTask = th.InnerObject as MainPipe;
             // The Application object will be used to obtain the CreationName of a PipelineComponentInfo from its PipelineComponentInfos collection.
             //app = new Application();
@@ -211,22 +211,22 @@ namespace PackageTableMapper
             /* ADD SOURCE COMPONENT */
 
             // Add an OLE DB source to the data flow the CreationName property requires an Application source_component_wrapper.
-            IDTSComponentMetaData100 source_component = dataFlowTask.ComponentMetaDataCollection.New();
-            source_component.ComponentClassID = app.PipelineComponentInfos["OLE DB Source"].CreationName;
+            IDTSComponentMetaData100 sourceComponent = dataFlowTask.ComponentMetaDataCollection.New();
+            sourceComponent.ComponentClassID = App.PipelineComponentInfos["OLE DB Source"].CreationName;
             // Get the design time source_component_wrapper of the source_component.
-            CManagedComponentWrapper source_component_wrapper = source_component.Instantiate();
+            CManagedComponentWrapper sourceComponentWrapper = sourceComponent.Instantiate();
             // Initialize the source_component
-            source_component_wrapper.ProvideComponentProperties();
+            sourceComponentWrapper.ProvideComponentProperties();
             // Set name of source_component
-            string src_comp_name = string.Format("src {0} {1} {2}", _src_server_name, src_table.Schema, src_table.Name);
+            string srcCompName = string.Format("src {0} {1} {2}", srcServerName, srcTable.Schema, srcTable.Name);
             //Console.WriteLine(src_comp_name);
-            source_component.Name = cleanSsisTaskName(src_comp_name);
+            sourceComponent.Name = CleanSsisTaskName(srcCompName);
             // Specify the connection manager _package connections
             //Console.WriteLine(_package.Connections[_src_cm_name]);
-            if (source_component.RuntimeConnectionCollection.Count > 0)
+            if (sourceComponent.RuntimeConnectionCollection.Count > 0)
             {
-                source_component.RuntimeConnectionCollection[0].ConnectionManager = DtsConvert.GetExtendedInterface(_package.Connections[_src_cm_name]);
-                source_component.RuntimeConnectionCollection[0].ConnectionManagerID = _package.Connections[_src_cm_name].ID;
+                sourceComponent.RuntimeConnectionCollection[0].ConnectionManager = DtsConvert.GetExtendedInterface(_package.Connections[srcCmName]);
+                sourceComponent.RuntimeConnectionCollection[0].ConnectionManagerID = _package.Connections[srcCmName].ID;
             }
             //foreach (IDTSRuntimeConnection100 rt_con in source_component.RuntimeConnectionCollection)
             //{
@@ -245,35 +245,35 @@ namespace PackageTableMapper
             //source_component_wrapper.SetComponentProperty("OpenRowset", string.Format("[{0}].[{1}]",src_table.Schema, src_table.Name));
             /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            source_component_wrapper.SetComponentProperty("AccessMode", 2);
-            string src_query = string.Format("SELECT * FROM [{0}].[{1}];", src_table.Schema, src_table.Name);
-            Console.WriteLine(src_query);
-            source_component_wrapper.SetComponentProperty("SqlCommand", src_query);
+            sourceComponentWrapper.SetComponentProperty("AccessMode", 2);
+            string srcQuery = string.Format("SELECT * FROM [{0}].[{1}];", srcTable.Schema, srcTable.Name);
+            Console.WriteLine(srcQuery);
+            sourceComponentWrapper.SetComponentProperty("SqlCommand", srcQuery);
             
             // Connect to the data source view
-            source_component_wrapper.AcquireConnections(null);
+            sourceComponentWrapper.AcquireConnections(null);
             // Reinitialize the metadata.
-            source_component_wrapper.ReinitializeMetaData();
-            source_component_wrapper.ReleaseConnections();
+            sourceComponentWrapper.ReinitializeMetaData();
+            sourceComponentWrapper.ReleaseConnections();
 
             /* ADD DESTINATION COMPONENT */
 
             // Add an OLE DB source to the data flow the CreationName property requires an Application source_component_wrapper.
-            IDTSComponentMetaData100 destination_component = dataFlowTask.ComponentMetaDataCollection.New();
-            destination_component.ComponentClassID = app.PipelineComponentInfos["OLE DB Destination"].CreationName;
+            IDTSComponentMetaData100 destinationComponent = dataFlowTask.ComponentMetaDataCollection.New();
+            destinationComponent.ComponentClassID = App.PipelineComponentInfos["OLE DB Destination"].CreationName;
             // Create the design-time source_component_wrapper of the destination_component.
-            CManagedComponentWrapper destination_component_wrapper = destination_component.Instantiate();
+            CManagedComponentWrapper destinationComponentWrapper = destinationComponent.Instantiate();
             // The ProvideComponentProperties method creates a default input.
-            destination_component_wrapper.ProvideComponentProperties();
+            destinationComponentWrapper.ProvideComponentProperties();
             // Set name of destination_component
-            string dst_comp_name = string.Format("dst - {0} {1} {2}", _dst_server_name, dst_table.Schema, dst_table.Name);
+            string dstCompName = string.Format("dst - {0} {1} {2}", dstServerName, dstTable.Schema, dstTable.Name);
             //Console.WriteLine(dst_comp_name);
-            destination_component.Name = cleanSsisTaskName(dst_comp_name);
+            destinationComponent.Name = CleanSsisTaskName(dstCompName);
             // Specify the connection manager from _package connections
-            if (destination_component.RuntimeConnectionCollection.Count > 0)
+            if (destinationComponent.RuntimeConnectionCollection.Count > 0)
             {
-                destination_component.RuntimeConnectionCollection[0].ConnectionManager = DtsConvert.GetExtendedInterface(_package.Connections[_dst_cm_name]);
-                destination_component.RuntimeConnectionCollection[0].ConnectionManagerID = _package.Connections[_dst_cm_name].ID;
+                destinationComponent.RuntimeConnectionCollection[0].ConnectionManager = DtsConvert.GetExtendedInterface(_package.Connections[dstCmName]);
+                destinationComponent.RuntimeConnectionCollection[0].ConnectionManagerID = _package.Connections[dstCmName].ID;
             }
             //foreach (IDTSRuntimeConnection100 rt_con in source_component.RuntimeConnectionCollection)
             //{
@@ -284,33 +284,33 @@ namespace PackageTableMapper
             //    System.Console.WriteLine("connection manager: {0}", con.Name);
             //}
             // Set the custom properties: destination view and access mode
-            destination_component_wrapper.SetComponentProperty("AccessMode", 3);
-            string dst_table_str = string.Format("[{0}].[{1}]", dst_table.Schema, dst_table.Name);
+            destinationComponentWrapper.SetComponentProperty("AccessMode", 3);
+            string dstTableStr = string.Format("[{0}].[{1}]", dstTable.Schema, dstTable.Name);
             //Console.WriteLine("{0} dst_table_str", dst_table_str);
-            destination_component_wrapper.SetComponentProperty("OpenRowset", dst_table_str);
+            destinationComponentWrapper.SetComponentProperty("OpenRowset", dstTableStr);
             // Connect to the data destination view
-            destination_component_wrapper.AcquireConnections(null);
+            destinationComponentWrapper.AcquireConnections(null);
             // Reinitialize the metadata.
-            destination_component_wrapper.ReinitializeMetaData();
-            destination_component_wrapper.ReleaseConnections();
+            destinationComponentWrapper.ReinitializeMetaData();
+            destinationComponentWrapper.ReleaseConnections();
 
             /* ADD PATH FROM source_component TO destination_component */
 
             // Create the path object
             IDTSPath100 path = dataFlowTask.PathCollection.New();
-            path.AttachPathAndPropagateNotifications(source_component.OutputCollection[0], destination_component.InputCollection[0]);
+            path.AttachPathAndPropagateNotifications(sourceComponent.OutputCollection[0], destinationComponent.InputCollection[0]);
 
             /* MAP COLUMNS FROM source_component TO destination_component */
 
             // Get the destination_component's default input and virtual input.
-            IDTSInput100 input = destination_component.InputCollection[0];
+            IDTSInput100 input = destinationComponent.InputCollection[0];
             IDTSVirtualInput100 vInput = input.GetVirtualInput();
 
             // Iterate through the virtual input column collection.
             foreach (IDTSVirtualInputColumn100 vColumn in vInput.VirtualInputColumnCollection)
             {
                 // Call the SetUsageType method of the destination_component to add each available virtual input column as an input column.
-                IDTSInputColumn100 vCol = destination_component_wrapper.SetUsageType(input.ID, vInput, vColumn.LineageID, DTSUsageType.UT_READONLY);
+                IDTSInputColumn100 vCol = destinationComponentWrapper.SetUsageType(input.ID, vInput, vColumn.LineageID, DTSUsageType.UT_READONLY);
 
                 // check if the column match exists in the destination_component view 
                 string cinputColumnName = vColumn.Name;
@@ -318,7 +318,7 @@ namespace PackageTableMapper
                                    where item.Name == cinputColumnName && item.DataType == vColumn.DataType
                                    select item).Count();
                 // check if the column is an identity column
-                var isIdentity = (from Column item in src_table.Columns
+                var isIdentity = (from Column item in srcTable.Columns
                                   where item.Identity == true
                                   && item.Name == cinputColumnName
                                   select item).Count();
@@ -327,15 +327,15 @@ namespace PackageTableMapper
                 {
                     if (isIdentity == 1)
                     {
-                        Console.WriteLine("{0} is an identity column", src_table.Columns[cinputColumnName]);
+                        Console.WriteLine("{0} is an identity column", srcTable.Columns[cinputColumnName]);
                     }
                     else
                     {
-                        destination_component_wrapper.MapInputColumn(input.ID, vCol.ID, input.ExternalMetadataColumnCollection[vColumn.Name].ID);
+                        destinationComponentWrapper.MapInputColumn(input.ID, vCol.ID, input.ExternalMetadataColumnCollection[vColumn.Name].ID);
                         Console.WriteLine("\t{0} ({1}) => {2}", input.ExternalMetadataColumnCollection[vColumn.Name].Name, input.ExternalMetadataColumnCollection[vColumn.Name].DataType.ToString(), vColumn.Name);
                     }
                     // confirm component initialized and valid 
-                    if (destination_component_wrapper.Validate() == DTSValidationStatus.VS_NEEDSNEWMETADATA)
+                    if (destinationComponentWrapper.Validate() == DTSValidationStatus.VS_NEEDSNEWMETADATA)
                     {
                         Console.WriteLine("removing invalid column mapping");
                         // https://msdn.microsoft.com/en-us/library/microsoft.sqlserver.dts.pipeline.pipelinecomponent.reinitializemetadata.aspx
@@ -350,22 +350,22 @@ namespace PackageTableMapper
             DTSExecResult validation = _package.Validate(_package.Connections, null, null, null);
             return th;
         }
-        public TaskHost addDataFlowTask(Table src_table, Table dst_table)
+        public TaskHost AddDataFlowTask(Table srcTable, Table dstTable)
         {
-            return addDataFlowTask(_package.Executables, src_table, dst_table);
+            return AddDataFlowTask(_package.Executables, srcTable, dstTable);
         }
-        public TaskHost addDataFlowTask(string src_server_name, string src_database_name, string src_schema_name, string src_table_name, string dst_server_name, string dst_database_name, string dst_schema_name, string dst_table_name)
+        public TaskHost AddDataFlowTask(string srcServerName, string srcDatabaseName, string srcSchemaName, string srcTableName, string dstServerName, string dstDatabaseName, string dstSchemaName, string dstTableName)
         {
-            Table src_table = SchemaReader.getTable(src_server_name, src_database_name, src_schema_name, src_table_name);
-            Table dst_table = SchemaReader.getTable(dst_server_name, dst_database_name, dst_schema_name, dst_table_name);
-            return addDataFlowTask(src_table, dst_table);
+            Table srcTable = SchemaReader.GetTable(srcServerName, srcDatabaseName, srcSchemaName, srcTableName);
+            Table dstTable = SchemaReader.GetTable(dstServerName, dstDatabaseName, dstSchemaName, dstTableName);
+            return AddDataFlowTask(srcTable, dstTable);
         }
-        public void getExecutables()
+        public void GetExecutables()
         {
             Executables execs = _package.Executables;
-            getExecutables(execs);
+            GetExecutables(execs);
         }
-        public void getExecutables(Executables execs)
+        public void GetExecutables(Executables execs)
         {
             foreach (Executable e in execs)
             {
@@ -436,7 +436,7 @@ namespace PackageTableMapper
                                                 //Console.WriteLine(string.Format("\t\t\tID = {0}", conmgr.ID));
                                                 //Console.WriteLine(string.Format("\t\t\tCreationName = {0}", conmgr.CreationName));
                                                 Console.WriteLine(string.Format("\t\t\tConnectionString = {0}", conmgr.ConnectionString));
-                                                Console.WriteLine(string.Format("\t\t\tDatabase = {0}", CommonUtils.CommonUtils.extractDatabaseName(conmgr.ConnectionString)));
+                                                Console.WriteLine(string.Format("\t\t\tDatabase = {0}", CommonUtils.CommonUtils.ExtractDatabaseName(conmgr.ConnectionString)));
                                             }
 
                                         }
@@ -478,7 +478,7 @@ namespace PackageTableMapper
                     Sequence seq = e as Sequence;
                     Console.WriteLine(string.Format("\t\tName = {0}", seq.Name));
                     //Console.WriteLine(string.Format("\tGetExecutionPath() = {0}", seq.GetExecutionPath()));
-                    getExecutables(seq.Executables);
+                    GetExecutables(seq.Executables);
                 }
                 else if (e.GetType() == typeof(ForEachLoop))
                 {
@@ -486,16 +486,16 @@ namespace PackageTableMapper
                     ForEachLoop loop = e as ForEachLoop;
                     Console.WriteLine(string.Format("\t\tName = {0}", loop.Name));
                     //Console.WriteLine(string.Format("\t\tGetExecutionPath() = {0}", loop.GetExecutionPath()));
-                    getExecutables(loop.Executables);
+                    GetExecutables(loop.Executables);
                 }
             }
         }
-        public void getDestinationTables()
+        public void GetDestinationTables()
         {
             DestinationTables = new List<Tuple<string,string>>();
-            getDestinationTables(_package.Executables);
+            GetDestinationTables(_package.Executables);
         }
-        public void getDestinationTables(Executables execs)
+        public void GetDestinationTables(Executables execs)
         {
             foreach (Executable exec in execs)
             {
@@ -568,8 +568,8 @@ namespace PackageTableMapper
                                                 //Console.WriteLine(string.Format("\t\t\tID = {0}", conmgr.ID));
                                                 //Console.WriteLine(string.Format("\t\t\tCreationName = {0}", conmgr.CreationName));
                                                 //Console.WriteLine(string.Format("\t\t\tConnectionString = {0}", conmgr.ConnectionString));
-                                                Console.WriteLine(string.Format("\t\t\tDatabase = {0}", CommonUtils.CommonUtils.extractDatabaseName(conmgr.ConnectionString)));
-                                                databaseName = CommonUtils.CommonUtils.extractDatabaseName(conmgr.ConnectionString);
+                                                Console.WriteLine(string.Format("\t\t\tDatabase = {0}", CommonUtils.CommonUtils.ExtractDatabaseName(conmgr.ConnectionString)));
+                                                databaseName = CommonUtils.CommonUtils.ExtractDatabaseName(conmgr.ConnectionString);
                                                 Tuple<string, string> databaseTable = new Tuple<string, string>(databaseName,tableName);
 
                                                 //tableName = databaseName + "." + tableName;
@@ -616,7 +616,7 @@ namespace PackageTableMapper
                     Sequence seq = exec as Sequence;
                     //Console.WriteLine(string.Format("\t\tName = {0}", seq.Name));
                     //Console.WriteLine(string.Format("\tGetExecutionPath() = {0}", seq.GetExecutionPath()));
-                    getDestinationTables(seq.Executables);
+                    GetDestinationTables(seq.Executables);
                 }
                 else if (exec.GetType() == typeof(ForEachLoop))
                 {
@@ -624,20 +624,20 @@ namespace PackageTableMapper
                     ForEachLoop loop = exec as ForEachLoop;
                     //Console.WriteLine(string.Format("\t\tName = {0}", loop.Name));
                     //Console.WriteLine(string.Format("\t\tGetExecutionPath() = {0}", loop.GetExecutionPath()));
-                    getDestinationTables(loop.Executables);
+                    GetDestinationTables(loop.Executables);
                 }
             }
         }
-        public TaskHost addSqlTask(Executables execs, Database database, string task_name, string sql_source)
+        public TaskHost AddSqlTask(Executables execs, Database database, string taskName, string sqlSource)
         {
             Executable e = execs.Add("STOCK:SQLTask");
             TaskHost th = e as TaskHost;
 
-            ExecuteSQLTask sql_task = th.InnerObject as ExecuteSQLTask;
-            sql_task.SqlStatementSourceType = SqlStatementSourceType.DirectInput;
-            sql_task.SqlStatementSource = sql_source;
-            sql_task.Connection = addConnection(database.Parent.Name, database.Name);
-            th.Name = task_name;
+            ExecuteSQLTask sqlTask = th.InnerObject as ExecuteSQLTask;
+            sqlTask.SqlStatementSourceType = SqlStatementSourceType.DirectInput;
+            sqlTask.SqlStatementSource = sqlSource;
+            sqlTask.Connection = AddConnection(database.Parent.Name, database.Name);
+            th.Name = taskName;
             //Console.WriteLine("BypassPrepare          {0}", th.Properties["BypassPrepare"].GetValue(th));
             //Console.WriteLine("CodePage               {0}", th.Properties["CodePage"].GetValue(th));
             //Console.WriteLine("Connection             {0}", th.Properties["Connection"].GetValue(th));
@@ -659,79 +659,79 @@ namespace PackageTableMapper
             //Console.WriteLine("New value of ResultSetType:  {0}", th.Properties["ResultSetType"].GetValue(th), th.Properties["SqlStatementSourceType"].GetValue(th));
             return th;
         }
-        public TaskHost addSqlTask(Executables execs, string server_name, string database_name, string task_name, string sql_source)
+        public TaskHost AddSqlTask(Executables execs, string serverName, string databaseName, string taskName, string sqlSource)
         {
-            Database database = SchemaReader.getDatabase(server_name, database_name);
-            return addSqlTask(execs, database, task_name, sql_source);
+            Database database = SchemaReader.GetDatabase(serverName, databaseName);
+            return AddSqlTask(execs, database, taskName, sqlSource);
         }
-        public TaskHost addSqlTask(string server_name, string database_name, string task_name, string sql_source)
+        public TaskHost AddSqlTask(string serverName, string databaseName, string taskName, string sqlSource)
         {
-            return addSqlTask(_package.Executables, server_name, database_name, task_name, sql_source);
+            return AddSqlTask(_package.Executables, serverName, databaseName, taskName, sqlSource);
         }
 
-        public Sequence addSequence(Executables execs, string sequence_name)
+        public Sequence AddSequence(Executables execs, string sequenceName)
         {
             //(Microsoft.SqlServer.Dts.Runtime.Sequence)
             Executable e = execs.Add("STOCK:SEQUENCE");
             Sequence seq = e as Sequence;
-            seq.Name = cleanSsisTaskName(sequence_name);
+            seq.Name = CleanSsisTaskName(sequenceName);
             return seq;
         }
-        public Sequence addSequence(string sequence_name)
+        public Sequence AddSequence(string sequenceName)
         {
-            return addSequence(_package.Executables, sequence_name);
+            return AddSequence(_package.Executables, sequenceName);
         }
 
         /* Convience methods
          * 
          * 
          */
-        public string addDataFlowTasksBySchema(string database_name, string schema_name, string src_server_name, string dst_server_name)
+        public string AddDataFlowTasksBySchema(string databaseName, string schemaName, string srcServerName, string dstServerName)
         {
-            Sequence seq = addSequence(schema_name);
+            Sequence seq = AddSequence(schemaName);
 
-            Database src_database = SchemaReader.getDatabase(src_server_name, database_name);
-            Database dst_database = SchemaReader.getDatabase(dst_server_name, database_name);
-            foreach (Table src_table in src_database.Tables)
+            Database srcDatabase = SchemaReader.GetDatabase(srcServerName, databaseName);
+            Database dstDatabase = SchemaReader.GetDatabase(dstServerName, databaseName);
+            foreach (Table srcTable in srcDatabase.Tables)
             {
-                if (src_table.Schema == schema_name && dst_database.Tables[src_table.Name, src_table.Schema] != null)
+                if (srcTable.Schema == schemaName && dstDatabase.Tables[srcTable.Name, srcTable.Schema] != null)
                 {
-                    addTruncatePopulate(seq.Executables, src_table, dst_database.Tables[src_table.Name, src_table.Schema]);
+                    AddTruncatePopulate(seq.Executables, srcTable, dstDatabase.Tables[srcTable.Name, srcTable.Schema]);
                 }
             }
             return seq.Name;
 
         }
-        public void addDataFlowTasksBySchema(string database_name, string src_server_name, string dst_server_name)
+        public void AddDataFlowTasksBySchema(string databaseName, string srcServerName, string dstServerName)
         {
-            Database database = SchemaReader.getDatabase(src_server_name, database_name);
+            Database database = SchemaReader.GetDatabase(srcServerName, databaseName);
             foreach (Schema schema in database.Schemas)
             {
-                addDataFlowTasksBySchema(database_name, schema.Name, src_server_name, dst_server_name);
+                AddDataFlowTasksBySchema(databaseName, schema.Name, srcServerName, dstServerName);
             }
         }
-        public Sequence addTruncatePopulate(Executables execs, Table src_table, Table dst_table)
+        public Sequence AddTruncatePopulate(Executables execs, Table srcTable, Table dstTable)
         {
-            Sequence seq = addSequence(execs, src_table.Name);
+            Sequence seq = AddSequence(execs, srcTable.Name);
 
-            TaskHost th_sql = addSqlTask(seq.Executables, dst_table.Parent, string.Format("TRUNCATE TABLE {0}-{1}", dst_table.Schema, dst_table.Name), string.Format("TRUNCATE TABLE {0}.{1}", dst_table.Schema, dst_table.Name));
-            ExecuteSQLTask sql = th_sql.InnerObject as ExecuteSQLTask;
-            Executable e_sql = th_sql as Executable;
+            TaskHost thSql = AddSqlTask(seq.Executables, dstTable.Parent, string.Format("TRUNCATE TABLE {0}-{1}", dstTable.Schema, dstTable.Name), string.Format("TRUNCATE TABLE {0}.{1}", dstTable.Schema, dstTable.Name));
+            ExecuteSQLTask sql = thSql.InnerObject as ExecuteSQLTask;
+            Executable eSql = thSql as Executable;
 
-            TaskHost th_df = addDataFlowTask(seq.Executables, src_table, dst_table);
-            MainPipe mp = th_df.InnerObject as MainPipe;
-            Executable e_df = th_df as Executable;
+            TaskHost thDf = AddDataFlowTask(seq.Executables, srcTable, dstTable);
+            MainPipe mp = thDf.InnerObject as MainPipe;
+            Executable eDf = thDf as Executable;
 
-            PrecedenceConstraint pre_const = seq.PrecedenceConstraints.Add(e_sql, e_df);
-            pre_const.Name = dst_table.Name;
+            PrecedenceConstraint preConst = seq.PrecedenceConstraints.Add(eSql, eDf);
+            preConst.Name = dstTable.Name;
 
             return seq;
         }
-        public Sequence addTruncatePopulate(Executables execs, string src_server_name, string src_database_name, string src_schema_name, string src_table_name, string dst_server_name, string dst_database_name, string dst_schema_name, string dst_table_name)
+        public Sequence AddTruncatePopulate(Executables execs, string srcServerName, string srcDatabaseName, string srcSchemaName, string srcTableName, string dstServerName, string dstDatabaseName, string dstSchemaName, string dstTableName)
         {
-            Table dst_table = SchemaReader.getTable(dst_server_name, dst_database_name, dst_schema_name, dst_table_name);
-            Table src_table = SchemaReader.getTable(src_server_name, src_database_name, src_schema_name, src_table_name);
-            return addTruncatePopulate(execs, src_table, dst_table);
+            Table dstTable = SchemaReader.GetTable(dstServerName, dstDatabaseName, dstSchemaName, dstTableName);
+            Table srcTable = SchemaReader.GetTable(srcServerName, srcDatabaseName, srcSchemaName, srcTableName);
+            return AddTruncatePopulate(execs, srcTable, dstTable);
         }
     }
 }

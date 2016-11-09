@@ -122,6 +122,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CommonUtils.cs" />
+    <Compile Include="DataSync.cs" />
     <Compile Include="EtlPackage.cs" />
     <Compile Include="ExcelHandler.cs" />
     <Compile Include="MsdbReader.cs" />

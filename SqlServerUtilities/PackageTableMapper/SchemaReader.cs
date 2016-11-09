@@ -9,29 +9,29 @@ namespace PackageTableMapper
 {
     public static class SchemaReader
     {
-        public static Server getServer(string server_name)
+        public static Server GetServer(string serverName)
         {
-            Server server = new Server(server_name);
+            Server server = new Server(serverName);
             if (server == null)
             {
                 throw new NullReferenceException();
             }
             return server;
         }
-        public static Database getDatabase(string server_name, string database_name)
+        public static Database GetDatabase(string serverName, string databaseName)
         {
-            Server server = getServer(server_name);
-            Database database = server.Databases[database_name];
+            Server server = GetServer(serverName);
+            Database database = server.Databases[databaseName];
             if (database == null)
             {
                 throw new NullReferenceException();
             }
             return database;
         }
-        public static Table getTable(string server_name, string database_name, string schema_name, string table_name)
+        public static Table GetTable(string serverName, string databaseName, string schemaName, string tableName)
         {
-            Database database = getDatabase(server_name, database_name);
-            Table table = database.Tables[table_name, schema_name];
+            Database database = GetDatabase(serverName, databaseName);
+            Table table = database.Tables[tableName, schemaName];
             if (table == null)
             {
                 throw new NullReferenceException();

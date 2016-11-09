@@ -10,31 +10,31 @@ namespace CommonUtils
     {
         public enum PostExecutionSteps
         {
-            OPEN_CWD = 1,
-            ESCAPE_EXIT = 2,
-            EXTENDED_EXIT = 3
+            OpenCwd = 1,
+            EscapeExit = 2,
+            ExtendedExit = 3
         }
         public static PostExecutionSteps delay_exit(int seconds)
         {
             ConsoleKeyInfo k = new ConsoleKeyInfo();
             Console.WriteLine("\nExecution Complete\nPress any key in the next {0} seconds.", seconds);
-            int next_message = 0;
+            int nextMessage = 0;
             for (int cnt = seconds * 10; cnt > 0; cnt--)
             {
                 if (Console.KeyAvailable == true)
                 {
                     k = Console.ReadKey();
                     if (k.Key == ConsoleKey.Escape)
-                        return PostExecutionSteps.ESCAPE_EXIT;
+                        return PostExecutionSteps.EscapeExit;
                     else if (k.Key == ConsoleKey.O)
                     {
                         Process.Start(Directory.GetCurrentDirectory());
-                        return PostExecutionSteps.OPEN_CWD;
+                        return PostExecutionSteps.OpenCwd;
                     }
                     cnt = 0;
                     delay_exit(seconds * 10);
                 }
-                else if (cnt / 10.0 >= next_message)
+                else if (cnt / 10.0 >= nextMessage)
                 {
                     //Console.WriteLine("{0} seconds", (cnt / 10).ToString());
                     System.Threading.Thread.Sleep(100);
@@ -45,9 +45,9 @@ namespace CommonUtils
                 }
             }
             Console.WriteLine("The key pressed was " + k.Key);
-            return PostExecutionSteps.EXTENDED_EXIT;
+            return PostExecutionSteps.ExtendedExit;
         }
-        public static void message(String text, int tab)
+        public static void Message(String text, int tab)
         {
             String offset = new String('\t', tab);
             Console.WriteLine("{0}{1}", offset, text);
@@ -55,15 +55,15 @@ namespace CommonUtils
             //file.WriteLine("{0}{1}", offset, text);
             //file.Close();
         }
-        public static void message(String text, int tab, System.IO.StreamWriter file)
+        public static void Message(String text, int tab, System.IO.StreamWriter file)
         {
             String offset = new String('\t', tab);
             Console.WriteLine("{0}{1}", offset, text);
             file.WriteLine("{0}{1}", offset, text);
         }
-        public static void message(String text)
+        public static void Message(String text)
         {
-            message(text, 0);
+            Message(text, 0);
         }
         public static void user_exit()
         {
@@ -71,34 +71,34 @@ namespace CommonUtils
             Console.ReadKey();
             //while (Console.ReadKey().Key != ConsoleKey.Escape && Console.ReadKey().Key != ConsoleKey.Enter) { }
         }
-        public static String cwd()
+        public static String Cwd()
         {
             string path = Directory.GetCurrentDirectory();
             Console.WriteLine("The current directory is {0}", path);
             return path;
         }
-        public static String cwd(String new_dir)
+        public static String Cwd(String newDir)
         {
-            if (!Directory.Exists(new_dir))
+            if (!Directory.Exists(newDir))
             {
-                Directory.CreateDirectory(new_dir);
+                Directory.CreateDirectory(newDir);
             }
-            Directory.SetCurrentDirectory(new_dir);
-            return cwd();
+            Directory.SetCurrentDirectory(newDir);
+            return Cwd();
         }
-        public static void save_to_file(String output_path, String content)
+        public static void save_to_file(String outputPath, String content)
         {
-            System.IO.StreamWriter file = new System.IO.StreamWriter(output_path, false);
+            System.IO.StreamWriter file = new System.IO.StreamWriter(outputPath, false);
             file.WriteLine(content);
             file.Close();
         }
-        public static void save_to_file(String output_path, StringBuilder content)
+        public static void save_to_file(String outputPath, StringBuilder content)
         {
-            System.IO.StreamWriter file = new System.IO.StreamWriter(output_path, false);
+            System.IO.StreamWriter file = new System.IO.StreamWriter(outputPath, false);
             file.WriteLine(content);
             file.Close();
         }
-        public static void preExecutionSetup()
+        public static void PreExecutionSetup()
         {
             Console.BufferHeight = 9999;
             Console.WindowHeight = (int)(Console.LargestWindowHeight * .5);
@@ -123,7 +123,7 @@ namespace CommonUtils
         {
             input.Print(0);
         }
-        public static string extractDatabaseName(string connectionString)
+        public static string ExtractDatabaseName(string connectionString)
         {
             Regex regex = new Regex(@"Initial Catalog[ ]*=[ ]*(?<database>[\w\..]+);");
             MatchCollection matches = regex.Matches(connectionString);
@@ -143,21 +143,21 @@ namespace CommonUtils
             }
             return null;
         }
-        public static string getEtlConnectionString(string serverName, string databaseName)
+        public static string GetEtlConnectionString(string serverName, string databaseName)
         {
             string confmt = "Data Source={0};" +
                   "Initial Catalog={1};Provider=SQLOLEDB.1;" +
                   "Integrated Security=SSPI;";
-            string connection_string = string.Format(confmt, serverName, databaseName);
-            return connection_string;
+            string connectionString = string.Format(confmt, serverName, databaseName);
+            return connectionString;
         }
-        public static string getSqlConnectionString(string serverName, string databaseName)
+        public static string GetSqlConnectionString(string serverName, string databaseName)
         {
             string confmt = "Data Source={0};" +
                   "Initial Catalog={1};" +
                   "Integrated Security=SSPI;";
-            string connection_string = string.Format(confmt, serverName, databaseName);
-            return connection_string;
+            string connectionString = string.Format(confmt, serverName, databaseName);
+            return connectionString;
         }
     }
 }
