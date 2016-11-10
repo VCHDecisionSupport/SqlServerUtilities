@@ -219,8 +219,8 @@ namespace SqlServerUtilities
             // initialize required connections
             string srcCmName = AddConnection(srcServerName, srcDatabaseName);
             string dstCmName = AddConnection(dstServerName, dstDatabaseName);
-            string srcServerName = srcServerName;
-            string dstServerName = dstServerName;
+            //string srcServerName = srcServerName;
+            //string dstServerName = dstServerName;
 
             /* ADD DATA FLOW TASK */
 
