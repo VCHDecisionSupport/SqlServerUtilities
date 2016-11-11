@@ -1,0 +1,14 @@
+<Connections>
+    <OleDbConnection Name="DEV" ConnectionString="Provider=SQLNCLI11;Server=STDBDECSUP01;Initial Catalog=gcDev;Integrated Security=SSPI;" />
+    <OleDbConnection Name="TEST" ConnectionString="Provider=SQLNCLI11;Server=STDBDECSUP02;Initial Catalog=master;Integrated Security=SSPI;" />
+    <OleDbConnection Name="BETA" ConnectionString="Provider=SQLNCLI11;Server=STDBDECSUP03;Initial Catalog=master;Integrated Security=SSPI;" />
+    <OleDbConnection Name="PROD" ConnectionString="Provider=SQLNCLI11;Server=SaDBDECSUP04;Initial Catalog=master;Integrated Security=SSPI;" />
+    <OleDbConnection Name="SPSQL" ConnectionString="Provider=SQLNCLI11;Server=STDBDECSUP01;Initial Catalog=DSSPPROD_UsageAndHealth;Integrated Security=SSPI;" />
+  </Connections>
+  <Databases>
+    <Database Name="DataPatternsStaging" ConnectionName="Target" />
+  </Databases>
+  <Schemas>
+    <Schema Name="stg" DatabaseName="DataPatternsStaging" />
+  </Schemas>
+</Biml>
