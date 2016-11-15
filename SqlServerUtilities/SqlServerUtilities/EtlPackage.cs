@@ -626,6 +626,7 @@ namespace SqlServerUtilities
 
         public void ReadExecutables()
         {
+            // check executables from object
             Executables execs = _package.Executables;
             LogFile = new StreamWriter(Path.Combine(CommonUtils.CommonUtils.Cwd(), _package.Name + ".txt"));
             string.Format("Connections:", _package.Connections.Count).Print(0, ref LogFile);
@@ -660,6 +661,7 @@ namespace SqlServerUtilities
         {
             if (e.GetType() == typeof(TaskHost))
             {
+                
                 TaskHost th = e as TaskHost;
                 if (th.InnerObject is MainPipe)
                 {
