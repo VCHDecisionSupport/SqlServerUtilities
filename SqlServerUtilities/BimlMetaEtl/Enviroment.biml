@@ -1,2 +1,20 @@
 <Biml xmlns="http://schemas.varigence.com/biml.xsd">
-</Biml>
+  <#@ template tier="0" #>
+    <Connections>
+      <OleDbConnection Name="DEV" ConnectionString="Provider=SQLNCLI11;Server=STDBDECSUP01;Initial Catalog=CommunityMart;Integrated Security=SSPI;" />
+      <OleDbConnection Name="TEST" ConnectionString="Provider=SQLNCLI11;Server=STDBDECSUP02;Initial Catalog=CommunityMart;Integrated Security=SSPI;" />
+      <OleDbConnection Name="BETA" ConnectionString="Provider=SQLNCLI11;Server=STDBDECSUP03;Initial Catalog=CommunityMart;Integrated Security=SSPI;" />
+      <OleDbConnection Name="PROD" ConnectionString="Provider=SQLNCLI11;Server=SPDBDECSUP04;Initial Catalog=CommunityMart;Integrated Security=SSPI;" />
+      <OleDbConnection Name="SharePointDbConnection" ConnectionString="Provider=SQLNCLI11;Server=STDBDECSUP01;Initial Catalog=DSSPPROD_UsageAndHealth;Integrated Security=SSPI;" />
+    </Connections>
+
+    <Databases>
+      <Database Name="DevCommunityMart" ConnectionName="DEV" />
+      <Database Name="TestCommunityMart" ConnectionName="TEST" />
+    </Databases>
+
+    <Schemas>
+      <Schema Name="dbo" DatabaseName="DevCommunityMart" />
+      <Schema Name="dbo" DatabaseName="TestCommunityMart" />
+    </Schemas>
+  </Biml>
