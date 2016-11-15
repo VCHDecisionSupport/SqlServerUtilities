@@ -1,11 +1,22 @@
-class DataSourceConnector(object):
-	"""docstring for DataSourceConnector"""
+"""
+	Dataware house structure dependancies
 
+	view|report|cube -> star -> fact+dims -> etl ->  
+
+"""
+
+class ConnectionManager(object):
+	"""docstring for ConnectionManager"""
+	def __init__(self, arg):
+		super(ConnectionManager, self).__init__()
+		self.arg = arg
+		
+class DataSource(ConnectionManager):
+	"""DataSourceConnector is like a """
 	_name = None
-	_connection_string = None
 
 	def __init__(self, arg):
-		super(DataSourceConnector, self).__init__()
+		super(DataSourceConnection, self).__init__()
 		self.arg = arg
 
 	def get_staging_table_name(self):
@@ -14,8 +25,22 @@ class DataSourceConnector(object):
 	def get_columns(self):
 		return NotImplementedError(" error")
 
-class Dimension(object):
+class SqlTable(object):
+	_name = None
+	_columns = None
+	_connection = None
 
+	def __init__(self):
+		super(SqlTable, self).__init__()
+
+	def get_create_script(self):
+		return NotImplementedError(" error")
+
+	def create_object(self):
+		return NotImplementedError(" error")
+
+
+class Dimension(object):
 	_source_column_name = None
 	_
 
