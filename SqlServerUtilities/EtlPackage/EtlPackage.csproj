@@ -56,9 +56,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EtlPackage.cs" />
+    <Compile Include="MsdbReader.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ScriptExtensions.cs" />
     <Compile Include="SqlUtilities.cs" />
+    <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
