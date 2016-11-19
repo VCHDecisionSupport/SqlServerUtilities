@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Microsoft.SqlServer.Management.Smo;
 
@@ -9,41 +11,67 @@ namespace EtlPackage
     {
         static void test_EtlPackage_init()
         {
-            EtlPackage etlPackage = new EtlPackage("etlPackage");
-            etlPackage.AddOleDbConnectionManager(new Database(new Server("STDBDECSUP01"), "DSDW"));
-            etlPackage.AddOleDbConnectionManager(new Database(new Server("STDBDECSUP01"), "DSDW"));
-            etlPackage.AddOleDbConnectionManager(new Database(new Server("STDBDECSUP01"), "CommunityMart"));
-            etlPackage.AddOleDbConnectionManager(new Database(new Server("STDBDECSUP01"), "CommunityMart"));
+            EtlPackageBuilder etlPackageBuilder = new EtlPackageBuilder("etlPackageBuilder");
+            etlPackageBuilder.AddOleDbConnectionManager(new Database(new Server("STDBDECSUP01"), "DSDW"));
+            etlPackageBuilder.AddOleDbConnectionManager(new Database(new Server("STDBDECSUP01"), "DSDW"));
+            etlPackageBuilder.AddOleDbConnectionManager(new Database(new Server("STDBDECSUP01"), "CommunityMart"));
+            etlPackageBuilder.AddOleDbConnectionManager(new Database(new Server("STDBDECSUP01"), "CommunityMart"));
         }
-        static void Main(string[] args)
+
+        static void test_EtlPackageReader()
+        {
+            EtlPackageReader etlPackageReader = new EtlPackageReader("C:\\Users\\user\\Dropbox\\Vault\\ECommunity\\Dev\\Landing\\ETL\\ChildPARISLandingA_E.dtsx");
+            //EtlPackageReader etlPackageReader = new EtlPackageReader("C:\\Users\\user\\Source\\Repos\\SqlServerUtilities\\SqlServerUtilities\\SandBox\\\\ChildPARISLandingA_E.dtsx");
+            etlPackageReader.ReadExecutables();
+        }
+
+        static void test_EtlPackageReaderRecursive()
+        {
+            string currentWorkingDirectory = Utilities.Cwd();
+            throw new NotImplementedException();
+        }
+        private static void test_EtlPackageReaderFolder()
+        {
+            string currentWorkingDirectory = Utilities.Cwd();
+            var etlPackagePaths = Directory.EnumerateFiles(currentWorkingDirectory, "*.dtsx").ToList();
+            if (etlPackagePaths.Count == 0)
+            {
+                Console.WriteLine($"No *.dtsx files found in directory: {currentWorkingDirectory}");
+            }
+            foreach (string etlPackagePath in etlPackagePaths)
+            {
+                EtlPackageReader etlPackageReader = new EtlPackageReader(etlPackagePath);
+                etlPackageReader.ReadExecutables();
+            }
+        }
+        static int Main(string[] args)
         {
             TextWriterTraceListener myWriter = new
             TextWriterTraceListener(System.Console.Out);
             Debug.Listeners.Add(myWriter);
 
-            //Database database = SqlUtilities.GetDatabase("STDBDECSUP01", "CommunityMart");
-            //foreach (Table table in database.Tables)
-            //{
-            //    Debug.WriteLine(table.Urn);
-            //    // Server[@Name='STDBDECSUP01']/Database[@Name='CommunityMart']/Table[@Name='WaitlistType' and @Schema='Dim']
-
-            //}
-
-            string urn = @"Server[@Name='STDBDECSUP01']/Database[@Name='CommunityMart']/Table[@Name='WaitlistType' and @Schema='Dim']";
-            //Regex regex = new Regex(@"(\w+)\[@(\w+)='(\w+)'\]/(\w+)\[@(\w+)='(\w+)'\].*");
-            Regex regex = new Regex(@"Server\[@Name='(?<ServerName>\w+)'\]/Database\[@Name='(?<DatabaseName>\w+)'\]/(?<ObjectTypeName>\w+)\[@Name='(?<ObjectName>\w+)' and @Schema='(?<ObjectSchemaName>\w+)'\].*");
-            MatchCollection matches = regex.Matches(urn);
-            foreach (Match match in matches)
+            if (args.Length == 0)
             {
-                GroupCollection groups = match.Groups;
-
-                Debug.WriteLine(groups["ServerName"].Value);
-                Debug.WriteLine(groups["DatabaseName"].Value);
-                Debug.WriteLine(groups["ObjectTypeName"].Value);
-                Debug.WriteLine(groups["ObjectName"].Value);
-                Debug.WriteLine(groups["ObjectSchemaName"].Value);
+                System.Console.WriteLine("Parsing Etl Packages in current working directory...");
+                test_EtlPackageReaderFolder();
             }
+            else if (args.Length != 1 || !String.Equals(args[0], "-IncludeSubFolders", StringComparison.CurrentCultureIgnoreCase))
+            {
+                System.Console.WriteLine("Error.  Invalid argument.\nUsage: -IncludeSubFolders");
+            }
+            else if (args.Length == 1 || String.Equals(args[0], "-IncludeSubFolders", StringComparison.CurrentCultureIgnoreCase))
+            {
+                System.Console.WriteLine("Parsing Etl Packages in current working directory is subfolders...");
+                test_EtlPackageReaderRecursive();
+            }
+            //test_EtlPackageReader();
+
+
+            Console.WriteLine($"execution complete.  press any key to exit.");
             Console.ReadKey();
+            return 0;
         }
+
+        
     }
 }

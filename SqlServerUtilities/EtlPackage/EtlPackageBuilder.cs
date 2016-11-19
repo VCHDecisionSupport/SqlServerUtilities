@@ -9,7 +9,7 @@ using Microsoft.SqlServer.Management.Smo;
 
 namespace EtlPackage
 {
-    public class EtlPackage
+    public class EtlPackageBuilder
     {
         private Application _application;
         private Package _package;
@@ -21,7 +21,7 @@ namespace EtlPackage
                 _package.Name = value;
             }
         }
-        public EtlPackage(string packageName)
+        public EtlPackageBuilder(string packageName)
         {
             // The Application object will be used to obtain the CreationName of a PipelineComponentInfo from its PipelineComponentInfos collection.
             _application = new Application();

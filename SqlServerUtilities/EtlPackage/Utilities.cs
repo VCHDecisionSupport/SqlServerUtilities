@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -20,7 +21,7 @@ namespace EtlPackage
         public static String Cwd()
         {
             string path = Directory.GetCurrentDirectory();
-            Console.WriteLine("The current directory is {0}", path);
+            Debug.Print("The current directory is {0}", path);
             return path;
         }
         public static String Cwd(String newDir)
@@ -39,5 +40,11 @@ namespace EtlPackage
             //while (Console.ReadKey().Key != ConsoleKey.Escape && Console.ReadKey().Key != ConsoleKey.Enter) { }
         }
 
+        public static void ToFile(this string fileContents, string filePath)
+        {
+            StreamWriter streamWriter = new StreamWriter(filePath);
+            streamWriter.Write(fileContents);
+            streamWriter.Close();
+        }
     }
 }

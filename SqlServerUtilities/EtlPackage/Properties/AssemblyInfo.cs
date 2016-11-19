@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("EtlPackage")]
+[assembly: AssemblyTitle("EtlPackageBuilder")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Health Shared Services BC")]
-[assembly: AssemblyProduct("EtlPackage")]
+[assembly: AssemblyProduct("EtlPackageBuilder")]
 [assembly: AssemblyCopyright("Copyright © Health Shared Services BC 2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
