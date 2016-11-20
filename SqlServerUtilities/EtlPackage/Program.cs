@@ -41,6 +41,7 @@ namespace EtlPackage
             foreach (string etlPackagePath in etlPackagePaths)
             {
                 EtlPackageReader etlPackageReader = new EtlPackageReader(etlPackagePath);
+                etlPackageReader.ReadConnectionManagers();
                 etlPackageReader.ReadExecutables();
             }
         }

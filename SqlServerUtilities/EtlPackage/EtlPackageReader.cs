@@ -19,21 +19,33 @@ namespace EtlPackage
 
         public EtlPackageReader(string etlPackagePath)
         {
-            Console.WriteLine($"EtlPackageReader({etlPackagePath})\n... loading...");
+            Console.WriteLine($"EtlPackageReader({etlPackagePath})...\nloading...");
             _application = new Application();
             IDTSEvents idtsEvents = new DefaultEvents();
             _package = _application.LoadPackage(etlPackagePath, idtsEvents);
+            Console.WriteLine($"Package {_package.Name} loaded.");
         }
 
         public void ReadConnectionManagers()
         {
-
+            Debug.IndentLevel += 1;
+            foreach (ConnectionManager connectionManager in _package.Connections)
+            {
+                Debug.Print($"Connection Manager Name: {connectionManager.Name}");
+                Debug.IndentLevel += 1;
+                Debug.Print($"Connection Manager Server: {SqlUtilities.ExtractServerName(connectionManager.ConnectionString)}");
+                Debug.Print($"Connection Manager Database: {SqlUtilities.ExtractDatabaseName(connectionManager.ConnectionString)}");
+                Debug.IndentLevel -= 1;
+            }
+            Debug.IndentLevel -= 1;
         }
+
         public void ReadExecutables()
         {
             Executables executables = _package.Executables;
             ReadExecutables(executables);
         }
+
         public void ReadExecutables(Executables executables)
         {
             Debug.IndentLevel += 1;
@@ -104,21 +116,52 @@ namespace EtlPackage
             }
             Debug.IndentLevel -= 1;
         }
+
         private void ParseDataFlow(TaskHost taskHost)
         {
             string sourceQuery = null;
+            string sourceConnectionManagerID = null;
             string destinationTableName = null;
-            string destinationDatabaseName = null;
+            string destinationConnectionManagerID = null;
             Debug.Print($"Data Flow Task: {taskHost.Name}");
             Debug.IndentLevel += 1;
             MainPipe mainPipe = taskHost.InnerObject as MainPipe;
             IDTSComponentMetaDataCollection100 metaDataCollection = mainPipe.ComponentMetaDataCollection;
+            // loop over all components (eg. Destination, Source, Derived Column, etc)
             foreach (IDTSComponentMetaData100 componentMetaData in metaDataCollection)
             {
                 string componentMetaDataType = componentMetaData.ContactInfo.Split(';')[0];
                 Debug.Print($"component: {componentMetaDataType}");
                 Debug.Print($"{nameof(componentMetaData.Name)}: {componentMetaData.Name}");
                 Debug.Print($"{nameof(componentMetaData.Description)}: {componentMetaData.Description}");
+
+                // try to get connection manager info (need runtime to validate connections... doesn't work unless connections can be resolved)
+                try
+                {
+                    string tempConnectionManagerId = null;
+                    Debug.Print($"{nameof(componentMetaData.RuntimeConnectionCollection)}: {componentMetaData.RuntimeConnectionCollection[0].ConnectionManagerID}");
+                    IDTSRuntimeConnectionCollection100 runtimeConnectionCollection = componentMetaData.RuntimeConnectionCollection;
+                    foreach (IDTSRuntimeConnection100 runtimeConnection in runtimeConnectionCollection)
+                    {
+                        tempConnectionManagerId = runtimeConnection.ConnectionManagerID;
+                        if (componentMetaDataType == "OLE DB Destination")
+                        {
+                            destinationConnectionManagerID = tempConnectionManagerId;
+                            Debug.Print($"DataFlow Destination Connection Manager: {destinationConnectionManagerID}");
+                        }
+                        else if (componentMetaDataType == "OLE DB Source")
+                        {
+                            sourceConnectionManagerID = tempConnectionManagerId;
+                            Debug.Print($"DataFlow Source Connection Manager: {sourceConnectionManagerID}");
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    destinationConnectionManagerID = "Unable to connect.";
+                    sourceConnectionManagerID = "Unable to connect.";
+                }
+                
                 IDTSCustomPropertyCollection100 customPropertyCollection = componentMetaData.CustomPropertyCollection;
                 if (componentMetaDataType == "OLE DB Destination")
                 {
@@ -167,6 +210,12 @@ namespace EtlPackage
             {
                 Debug.Print($"destinationTableName not found");
                 return;
+            }
+            if (sourceConnectionManagerID != null && destinationConnectionManagerID != null)
+            {
+                sourceQuery =
+                    $"-- Source: {sourceConnectionManagerID}\n-- Destination: {destinationConnectionManagerID}\n\n" +
+                    sourceQuery;
             }
             sourceQuery.ToFile($"{Path.Combine(Utilities.Cwd(), destinationTableName + ".sql")}");
         }

@@ -35,6 +35,26 @@ namespace EtlPackage
             }
             return null;
         }
+        public static string ExtractServerName(string connectionString)
+        {
+            Regex regex = new Regex(@"Data Source[ ]*=[ ]*(?<serverName>[\w\..]+);");
+            MatchCollection matches = regex.Matches(connectionString);
+            //Console.WriteLine("{0} matches found in:\n   {1}",
+            //             matches.Count,
+            //             connectionString);
+
+            // Report on each match.
+            foreach (Match match in matches)
+            {
+                GroupCollection groups = match.Groups;
+                //Console.WriteLine("'{0}' repeated at positions {1} and {2}",
+                //                  groups["database"].Value,
+                //                  groups[0].Index,
+                //                  groups[1].Index);
+                return groups["serverName"].Value;
+            }
+            return null;
+        }
         public static string ExtractServerQualifiedObjectName(Urn urn)
         {
             Regex regex = new Regex(@"Server\[@Name='(?<ServerName>\w+)'\]/Database\[@Name='(?<DatabaseName>\w+)'\]/(?<ObjectTypeName>\w+)\[@Name='(?<ObjectName>\w+)' and @Schema='(?<ObjectSchemaName>\w+)'\].*");
