@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom.Compiler;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -45,12 +46,9 @@ namespace EtlPackage
                 etlPackageReader.ReadExecutables();
             }
         }
-        static int Main(string[] args)
-        {
-            TextWriterTraceListener myWriter = new
-            TextWriterTraceListener(System.Console.Out);
-            Debug.Listeners.Add(myWriter);
 
+        static void HandleCommandLineArgs(string[] args)
+        {
             if (args.Length == 0)
             {
                 System.Console.WriteLine("Parsing Etl Packages in current working directory...");
@@ -65,6 +63,13 @@ namespace EtlPackage
                 System.Console.WriteLine("Parsing Etl Packages in current working directory is subfolders...");
                 test_EtlPackageReaderRecursive();
             }
+        }
+        static int Main(string[] args)
+        {
+            TextWriterTraceListener debugWriter = new TextWriterTraceListener(System.Console.Out);
+            Debug.Listeners.Add(debugWriter);
+            
+            
             //test_EtlPackageReader();
 
 

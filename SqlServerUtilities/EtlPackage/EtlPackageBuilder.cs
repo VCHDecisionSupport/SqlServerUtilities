@@ -16,11 +16,9 @@ namespace EtlPackage
 
         private string PackageName
         {
-            set
-            {
-                _package.Name = value;
-            }
+            set { _package.Name = value; }
         }
+
         public EtlPackageBuilder(string packageName)
         {
             // The Application object will be used to obtain the CreationName of a PipelineComponentInfo from its PipelineComponentInfos collection.
@@ -28,6 +26,7 @@ namespace EtlPackage
             _package = new Package();
             PackageName = packageName;
         }
+
         /// <summary>
         /// creates Ole Database ConnectionManager to Database in package if one does not already exist
         /// </summary>
@@ -41,13 +40,15 @@ namespace EtlPackage
             {
                 if (SqlUtilities.ExtractDatabaseName(packageConnection.ConnectionString) == databaseName)
                 {
-                    Debug.Print("AddOleDbConnectionManager: {0} exists in ConnectionManager: {1}", databaseName, packageConnection.Name);
+                    Debug.Print("AddOleDbConnectionManager: {0} exists in ConnectionManager: {1}", databaseName,
+                        packageConnection.Name);
                     return packageConnection.Name;
                 }
             }
             Debug.Print("AddOleDbConnectionManager: create new ConnectionManager to: {0} {1}", serverName, databaseName);
             return ConnectionManagerBuilder.Build.CreateOleDbConnection(_package, serverName, databaseName);
         }
+
         /// <summary>
         /// creates Ole Database ConnectionManager to Database in package if one does not already exist
         /// </summary>
@@ -59,7 +60,10 @@ namespace EtlPackage
             string serverName = database.Parent.Name;
             return AddOleDbConnectionManager(serverName, databaseName);
         }
-        public void AddOleDataFlow(string srcServerName, string srcDatabaseName, string srcSchemaName, string srcObjectName, string dstServerName, string dstDatabaseName, string dstSchemaName, string dstObjectName)
+
+        public void AddOleDataFlow(string srcServerName, string srcDatabaseName, string srcSchemaName,
+            string srcObjectName, string dstServerName, string dstDatabaseName, string dstSchemaName,
+            string dstObjectName)
         {
             string srcCmName = AddOleDbConnectionManager(srcServerName, srcDatabaseName);
             string dstCmName = AddOleDbConnectionManager(dstServerName, dstDatabaseName);
@@ -91,7 +95,8 @@ namespace EtlPackage
             //Console.WriteLine(_package.Connections[_src_cm_name]);
             if (sourceComponent.RuntimeConnectionCollection.Count > 0)
             {
-                sourceComponent.RuntimeConnectionCollection[0].ConnectionManager = DtsConvert.GetExtendedInterface(_package.Connections[srcCmName]);
+                sourceComponent.RuntimeConnectionCollection[0].ConnectionManager =
+                    DtsConvert.GetExtendedInterface(_package.Connections[srcCmName]);
                 sourceComponent.RuntimeConnectionCollection[0].ConnectionManagerID = _package.Connections[srcCmName].ID;
             }
             sourceComponentWrapper.SetComponentProperty("AccessMode", 2);
@@ -111,7 +116,8 @@ namespace EtlPackage
              */
             // Add an OLE DB source to the data flow the CreationName property requires an Application source_component_wrapper.
             IDTSComponentMetaData100 destinationComponent = dataFlowTask.ComponentMetaDataCollection.New();
-            destinationComponent.ComponentClassID = _application.PipelineComponentInfos["OLE DB Destination"].CreationName;
+            destinationComponent.ComponentClassID =
+                _application.PipelineComponentInfos["OLE DB Destination"].CreationName;
             // Create the design-time source_component_wrapper of the destination_component.
             CManagedComponentWrapper destinationComponentWrapper = destinationComponent.Instantiate();
             // The ProvideComponentProperties method creates a default input.
@@ -123,8 +129,10 @@ namespace EtlPackage
             // Specify the connection manager from _package connections
             if (destinationComponent.RuntimeConnectionCollection.Count > 0)
             {
-                destinationComponent.RuntimeConnectionCollection[0].ConnectionManager = DtsConvert.GetExtendedInterface(_package.Connections[dstCmName]);
-                destinationComponent.RuntimeConnectionCollection[0].ConnectionManagerID = _package.Connections[dstCmName].ID;
+                destinationComponent.RuntimeConnectionCollection[0].ConnectionManager =
+                    DtsConvert.GetExtendedInterface(_package.Connections[dstCmName]);
+                destinationComponent.RuntimeConnectionCollection[0].ConnectionManagerID =
+                    _package.Connections[dstCmName].ID;
             }
             //foreach (IDTSRuntimeConnection100 rt_con in source_component.RuntimeConnectionCollection)
             //{
@@ -158,29 +166,38 @@ namespace EtlPackage
             foreach (IDTSVirtualInputColumn100 vColumn in vInput.VirtualInputColumnCollection)
             {
                 // Call the SetUsageType method of the destination_component to add each available virtual input column as an input column.
-                IDTSInputColumn100 vCol = destinationComponentWrapper.SetUsageType(input.ID, vInput, vColumn.LineageID, DTSUsageType.UT_READONLY);
+                IDTSInputColumn100 vCol = destinationComponentWrapper.SetUsageType(input.ID, vInput, vColumn.LineageID,
+                    DTSUsageType.UT_READONLY);
 
                 // check if the column match exists in the destination_component view 
                 string cinputColumnName = vColumn.Name;
-                var columnExist = (from item in input.ExternalMetadataColumnCollection.Cast<IDTSExternalMetadataColumn100>()
-                                   where item.Name == cinputColumnName && item.DataType == vColumn.DataType
-                                   select item).Count();
+                var columnExist =
+                (from item in input.ExternalMetadataColumnCollection.Cast<IDTSExternalMetadataColumn100>()
+                    where item.Name == cinputColumnName && item.DataType == vColumn.DataType
+                    select item).Count();
                 // check if the column is an identity column
-                var isIdentity = (from Column item in SqlUtilities.GetColumns(srcServerName, srcDatabaseName, srcSchemaName, srcObjectName)
-                                  where item.Identity == true
-                                  && item.Name == cinputColumnName
-                                  select item).Count();
+                var isIdentity =
+                (from Column item in
+                    SqlUtilities.GetColumns(srcServerName, srcDatabaseName, srcSchemaName, srcObjectName)
+                    where item.Identity == true
+                          && item.Name == cinputColumnName
+                    select item).Count();
                 // if match then map
                 if (columnExist > 0)
                 {
                     if (isIdentity == 1)
                     {
-                        Console.WriteLine("{0} is an identity column", SqlUtilities.GetColumns(srcServerName, srcDatabaseName, srcSchemaName, srcObjectName)[cinputColumnName]);
+                        Console.WriteLine("{0} is an identity column",
+                            SqlUtilities.GetColumns(srcServerName, srcDatabaseName, srcSchemaName, srcObjectName)[
+                                cinputColumnName]);
                     }
                     else
                     {
-                        destinationComponentWrapper.MapInputColumn(input.ID, vCol.ID, input.ExternalMetadataColumnCollection[vColumn.Name].ID);
-                        Console.WriteLine("\t{0} ({1}) => {2}", input.ExternalMetadataColumnCollection[vColumn.Name].Name, input.ExternalMetadataColumnCollection[vColumn.Name].DataType.ToString(), vColumn.Name);
+                        destinationComponentWrapper.MapInputColumn(input.ID, vCol.ID,
+                            input.ExternalMetadataColumnCollection[vColumn.Name].ID);
+                        Console.WriteLine("\t{0} ({1}) => {2}",
+                            input.ExternalMetadataColumnCollection[vColumn.Name].Name,
+                            input.ExternalMetadataColumnCollection[vColumn.Name].DataType.ToString(), vColumn.Name);
                     }
                     // confirm component initialized and valid 
                     if (destinationComponentWrapper.Validate() == DTSValidationStatus.VS_NEEDSNEWMETADATA)
@@ -197,6 +214,7 @@ namespace EtlPackage
             // validate _package
             DTSExecResult validation = _package.Validate(_package.Connections, null, null, null);
         }
+
         public void AddOleDataFlow(Table srcTable, Table dstTable)
         {
             string srcServerName = srcTable.Parent.Parent.Name;
@@ -210,8 +228,11 @@ namespace EtlPackage
             string dstObjectName = dstTable.Name;
             string dstCmName = AddOleDbConnectionManager(dstTable.Parent);
 
-            AddOleDataFlow(srcServerName, srcDatabaseName, srcSchemaName: srcSchemaName, srcObjectName: srcObjectName, dstServerName: dstServerName, dstDatabaseName: dstDatabaseName, dstSchemaName: dstSchemaName, dstObjectName: dstObjectName);
+            AddOleDataFlow(srcServerName, srcDatabaseName, srcSchemaName: srcSchemaName, srcObjectName: srcObjectName,
+                dstServerName: dstServerName, dstDatabaseName: dstDatabaseName, dstSchemaName: dstSchemaName,
+                dstObjectName: dstObjectName);
         }
+
         public void AddOleDataFlow(View srcView, Table dstTable)
         {
             string srcServerName = srcView.Parent.Parent.Name;
@@ -224,8 +245,11 @@ namespace EtlPackage
             string dstSchemaName = dstTable.Schema;
             string dstObjectName = dstTable.Name;
 
-            AddOleDataFlow(srcServerName, srcDatabaseName, srcSchemaName: srcSchemaName, srcObjectName: srcObjectName, dstServerName: dstServerName, dstDatabaseName: dstDatabaseName, dstSchemaName: dstSchemaName, dstObjectName: dstObjectName);
+            AddOleDataFlow(srcServerName, srcDatabaseName, srcSchemaName: srcSchemaName, srcObjectName: srcObjectName,
+                dstServerName: dstServerName, dstDatabaseName: dstDatabaseName, dstSchemaName: dstSchemaName,
+                dstObjectName: dstObjectName);
         }
+
         public void AddOleDataFlow(Urn srcUrn, Urn dstUrn)
         {
             string srcServerQualifiedName = SqlUtilities.ExtractServerQualifiedObjectName(srcUrn);
@@ -240,9 +264,19 @@ namespace EtlPackage
             string dstSchemaName = dstServerQualifiedName.Split('.')[2];
             string dstObjectName = dstServerQualifiedName.Split('.')[3];
 
-            AddOleDataFlow(srcServerName, srcDatabaseName, srcSchemaName: srcSchemaName, srcObjectName: srcObjectName, dstServerName: dstServerName, dstDatabaseName: dstDatabaseName, dstSchemaName: dstSchemaName, dstObjectName: dstObjectName);
+            AddOleDataFlow(srcServerName, srcDatabaseName, srcSchemaName: srcSchemaName, srcObjectName: srcObjectName,
+                dstServerName: dstServerName, dstDatabaseName: dstDatabaseName, dstSchemaName: dstSchemaName,
+                dstObjectName: dstObjectName);
         }
-    }
+
+        public void SavePackage(string DestinationPath)
+        {
+            if (!Directory.Exists(DestinationPath))
+            {
+                
+            }
+        }
+}
     public sealed class ConnectionManagerBuilder
     {
         private static volatile ConnectionManagerBuilder _instance;
