@@ -75,6 +75,7 @@ namespace EtlPackage
             foreach (Executable executable in executables)
             {
                 Debug.Print($"executable type: {executable.ToString()}");
+                Debug.Print($"executable type: {executable.ToString()}");
                 if (executable is TaskHost)
                 {
                     Debug.Print("TaskHost");
@@ -142,7 +143,7 @@ namespace EtlPackage
                 {
                     //Console.WriteLine(string.Format(fmt, e.GetType(), "UNHANDLED executable type"));
                     //logFile.WriteLine(string.Format(fmt, e.GetType(), "UNHANDLED executable type"));
-                    Debug.Print($"\n\n\n\t{executable.GetType()} executable type is NOT IMPLEMENTED\n\n\n");
+                    Debug.Print($"\n\n\n\tparsing of {executable.GetType()} executable type is NOT IMPLEMENTED\n\n\n");
                 }
             }
             Debug.IndentLevel -= 1;

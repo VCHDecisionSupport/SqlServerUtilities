@@ -4,13 +4,12 @@ using System.Collections;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace EtlPackage
 {
-    //public interface Executable
-    //{
+    
 
-    //}
     public class EtlPackageInfo
     {
         string _packageName;
@@ -25,4 +24,5 @@ namespace EtlPackage
             _dataFlowDestinationTables.Add(fullyQualifiedTableName);
         }
     }
+
 }

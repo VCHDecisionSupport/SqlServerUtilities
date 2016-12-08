@@ -146,6 +146,13 @@ namespace EtlPackage
                 //sharePointUsageLogEtl.AddOleDataFlow(sharePointServerName, sharePointDatabaseName, table.Schema, table.Name, table.Parent.Parent.Name, table.Parent.Name, table.Schema, table.Name);
             }
         }
+        public static void test_MarkDownWriter()
+        {
+            MarkDownWriter md = new MarkDownWriter("fuckit.md");
+            md.WriteTitle("this is a title");
+            md.WriteCode("SELECT * FROM nowhere;");
+            md.Close();
+        }
         static int Main(string[] args)
         {
             TextWriterTraceListener debugWriter = new TextWriterTraceListener(System.Console.Out);
@@ -157,7 +164,8 @@ namespace EtlPackage
             //tables_to_views();
             //build_SharePointLogEtl();
 
-            test_EtlPackageReader_Msdb();
+            //test_EtlPackageReader_Msdb();
+            test_MarkDownWriter();
 
             Console.WriteLine($"\n\nexecution complete.  press any key to exit.");
             Console.ReadKey();
