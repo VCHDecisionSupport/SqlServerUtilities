@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.SqlServer.Dts.Pipeline.Wrapper;
 using Microsoft.SqlServer.Dts.Runtime;
+using Microsoft.SqlServer.Dts.Tasks.ExecuteSQLTask;
 using Microsoft.SqlServer.Management.Smo;
 using Sequence = Microsoft.SqlServer.Dts.Runtime.Sequence;
 
@@ -16,16 +17,40 @@ namespace EtlPackage
     {
         private Application _application;
         private Package _package;
-
         public EtlPackageReader(string etlPackagePath)
         {
-            Console.WriteLine($"EtlPackageReader({etlPackagePath})...\nloading...");
+            Console.WriteLine($"EtlPackageReader({etlPackagePath})...");
             _application = new Application();
             IDTSEvents idtsEvents = new DefaultEvents();
-            _package = _application.LoadPackage(etlPackagePath, idtsEvents);
+            if (File.Exists(etlPackagePath))
+            {
+                Debug.WriteLine($"package file found on filesystem\nloading...");
+                _package = _application.LoadPackage(etlPackagePath, idtsEvents);
+            }
+            else
+            {
+                Debug.Write($"ERROR package file NOT found on filesystem\nloading...");
+                throw new Exception($"EtlPackageReader({etlPackagePath}) path not found");
+            }
             Console.WriteLine($"Package {_package.Name} loaded.");
         }
-
+        public EtlPackageReader(string SsisServerName, string ssisEtlPath)
+        {
+            Console.WriteLine($"EtlPackageReader({SsisServerName}, {ssisEtlPath})...");
+            _application = new Application();
+            IDTSEvents idtsEvents = new DefaultEvents();
+            if (_application.ExistsOnDtsServer(ssisEtlPath, SsisServerName))
+            {
+                Debug.WriteLine($"package file found on Ssis Server (Dts)\nloading...");
+                _package = _application.LoadFromDtsServer(ssisEtlPath, SsisServerName, idtsEvents);
+            }
+            else
+            {
+                Debug.WriteLine($"ERROR package ({ssisEtlPath}) NOT found on Dts Server: {SsisServerName}\nloading...");
+                throw new Exception($"EtlPackageReader({ssisEtlPath} on {SsisServerName}) not found");
+            }
+            Console.WriteLine($"Package {_package.Name} loaded.");
+        }
         public void ReadConnectionManagers()
         {
             Debug.IndentLevel += 1;
@@ -39,13 +64,11 @@ namespace EtlPackage
             }
             Debug.IndentLevel -= 1;
         }
-
         public void ReadExecutables()
         {
             Executables executables = _package.Executables;
             ReadExecutables(executables);
         }
-
         public void ReadExecutables(Executables executables)
         {
             Debug.IndentLevel += 1;
@@ -59,9 +82,17 @@ namespace EtlPackage
                     if (taskHost.InnerObject is MainPipe)
                     {
                         Debug.Print("MainPipe");
-                        ParseDataFlow(taskHost);
+                        //ParseDataFlow(taskHost);
                     }
-
+                    else if (taskHost.InnerObject is ExecuteSQLTask)
+                    {
+                        Debug.Print("ExecuteSqlTask");
+                        ParseExecuteSql(taskHost);
+                    }
+                    else
+                    {
+                        Debug.Print($"\n\n\n\t{taskHost.InnerObject.GetType()} taskHost type is NOT IMPLEMENTED\n\n\n");
+                    }
                 }
                 else if (executable.GetType() == typeof(Sequence))
                 {
@@ -111,12 +142,28 @@ namespace EtlPackage
                 {
                     //Console.WriteLine(string.Format(fmt, e.GetType(), "UNHANDLED executable type"));
                     //logFile.WriteLine(string.Format(fmt, e.GetType(), "UNHANDLED executable type"));
-                    Debug.Print($"{executable.GetType()} executable type is NOT IMPLEMENTED");
+                    Debug.Print($"\n\n\n\t{executable.GetType()} executable type is NOT IMPLEMENTED\n\n\n");
                 }
             }
             Debug.IndentLevel -= 1;
         }
-
+        private void ParseExecuteSql(TaskHost taskHost)
+        {
+            Debug.Print($"Execute Sql Task: {taskHost.Name}");
+            Debug.IndentLevel += 1;
+            ExecuteSQLTask executeSql = taskHost.InnerObject as ExecuteSQLTask;
+            Debug.WriteLine($"Connection: {executeSql.Connection}");
+            Debug.WriteLine($"SqlStatementSource: {executeSql.SqlStatementSource}");
+            var parameterBindings = executeSql.ParameterBindings;
+            foreach (IDTSParameterBinding parameterBinding in parameterBindings)
+            {
+                Debug.WriteLine($"DtsVariableName: {parameterBinding.DtsVariableName}");
+                Debug.IndentLevel += 1;
+                Debug.WriteLine($"DataType Number: {parameterBinding.DataType}");
+                Debug.WriteLine($"ParameterDirection: {parameterBinding.ParameterDirection}");
+                Debug.IndentLevel -= 1;
+            }
+        }
         private void ParseDataFlow(TaskHost taskHost)
         {
             string sourceQuery = null;
@@ -161,7 +208,7 @@ namespace EtlPackage
                     destinationConnectionManagerID = "Unable to connect.";
                     sourceConnectionManagerID = "Unable to connect.";
                 }
-                
+
                 IDTSCustomPropertyCollection100 customPropertyCollection = componentMetaData.CustomPropertyCollection;
                 if (componentMetaDataType == "OLE DB Destination")
                 {
