@@ -153,6 +153,25 @@ namespace EtlPackage
             md.WriteCode("SELECT * FROM nowhere;");
             md.Close();
         }
+        public static void test_regex()
+        {
+            Debug.Write("hi\n");
+            string x = @"[SetAuditPkgExecution]
+   @pPkgExecKey = null
+   ,@pParentPkgExecKey = null
+   ,@pPkgVersionMajor = ?
+   ,@pPkgVersionMinor  = ?
+   ,@pPkgName = ?
+   ,@pIsProcessStart  = 1
+   ,@pIsPackageSuccessful  = 0
+   ,@pPkgExecKeyout  = null";
+            Regex re;
+            re = new Regex(@"^\s*([\[\]\n\r\t @\.,;'=\<\>\?0-9A-Za-z]+)");
+            re = new Regex(@"\n[  ]*");
+            x = re.Replace(x, s => "");
+            Debug.Write(x);
+            Debug.Write(re.Match(x).Groups[0]);
+        }
         static int Main(string[] args)
         {
             TextWriterTraceListener debugWriter = new TextWriterTraceListener(System.Console.Out);
@@ -164,8 +183,10 @@ namespace EtlPackage
             //tables_to_views();
             //build_SharePointLogEtl();
 
-            //test_EtlPackageReader_Msdb();
-            test_MarkDownWriter();
+            test_EtlPackageReader_Msdb();
+            //test_MarkDownWriter();
+            //test_regex();
+
 
             Console.WriteLine($"\n\nexecution complete.  press any key to exit.");
             Console.ReadKey();

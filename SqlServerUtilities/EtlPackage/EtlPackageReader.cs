@@ -17,6 +17,7 @@ namespace EtlPackage
     {
         private Application _application;
         private Package _package;
+        private MarkDownWriter _md;
         public EtlPackageReader(string etlPackagePath)
         {
             Console.WriteLine($"EtlPackageReader({etlPackagePath})...");
@@ -26,6 +27,7 @@ namespace EtlPackage
             {
                 Debug.WriteLine($"package file found on filesystem\nloading...");
                 _package = _application.LoadPackage(etlPackagePath, idtsEvents);
+                _md = new MarkDownWriter(Path.GetFileNameWithoutExtension(etlPackagePath)+".md");
             }
             else
             {
@@ -43,6 +45,8 @@ namespace EtlPackage
             {
                 Debug.WriteLine($"package file found on Ssis Server (Dts)\nloading...");
                 _package = _application.LoadFromDtsServer(ssisEtlPath, SsisServerName, idtsEvents);
+                _md = new MarkDownWriter(ssisEtlPath.Split('\\').Last().Split('/').Last().Replace("\\","").Replace("/","") + ".md");
+
             }
             else
             {
@@ -72,6 +76,7 @@ namespace EtlPackage
         public void ReadExecutables(Executables executables)
         {
             Debug.IndentLevel += 1;
+            _md.NestedLevel += 1;
             foreach (Executable executable in executables)
             {
                 Debug.Print($"executable type: {executable.ToString()}");
@@ -83,7 +88,7 @@ namespace EtlPackage
                     if (taskHost.InnerObject is MainPipe)
                     {
                         Debug.Print("MainPipe");
-                        //ParseDataFlow(taskHost);
+                        ParseDataFlow(taskHost);
                     }
                     else if (taskHost.InnerObject is ExecuteSQLTask)
                     {
@@ -103,6 +108,7 @@ namespace EtlPackage
                     //Console.WriteLine(string.Format(fmt, e.GetType().Name, seq.Name));
                     //logFile.WriteLine(string.Format(fmt, e.GetType().Name, seq.Name));
                     Debug.Print($"executable name: {sequence.Name}");
+                    _md.WriteTitle($"Sequence: {sequence.Name}");
                     ReadExecutables(sequence.Executables);
                 }
                 else if (executable.GetType() == typeof(ForEachLoop))
@@ -114,6 +120,7 @@ namespace EtlPackage
                     //Console.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                     //logFile.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                     Debug.Print($"executable name: {loop.Name}");
+                    _md.WriteTitle($"ForEachLoop: {loop.Name}");
                     ReadExecutables(loop.Executables);
                 }
                 else if (executable.GetType() == typeof(ForLoop))
@@ -126,6 +133,7 @@ namespace EtlPackage
                     //logFile.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                     //string.Format("{0}: {1}", executable.GetType().Name, loop.Name).Print(tabCount, ref LogFile);
                     Debug.Print($"executable name: {loop.Name}");
+                    _md.WriteTitle($"ForLoop: {loop.Name}");
                     ReadExecutables(loop.Executables);
                 }
                 else if (executable.GetType() == typeof(Package))
@@ -136,7 +144,8 @@ namespace EtlPackage
                     //Console.WriteLine(string.Format("\t\tGetExecutionPath() = {0}", loop.GetExecutionPath()));
                     //Console.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                     //logFile.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
-                    Debug.Print($"executable name: {loop.Name}");
+                    Debug.Print($"Child Package: {loop.Name}");
+                    _md.WriteTitle($"executable name: {loop.Name}");
                     ReadExecutables(loop.Executables);
                 }
                 else
@@ -152,9 +161,12 @@ namespace EtlPackage
         {
             Debug.Print($"Execute Sql Task: {taskHost.Name}");
             Debug.IndentLevel += 1;
+            _md.WriteTitle($"Execute Sql Task: {taskHost.Name}");
+            _md.NestedLevel += 1;
             ExecuteSQLTask executeSql = taskHost.InnerObject as ExecuteSQLTask;
             Debug.WriteLine($"Connection: {executeSql.Connection}");
             Debug.WriteLine($"SqlStatementSource: {executeSql.SqlStatementSource}");
+            _md.WriteCode($"{executeSql.SqlStatementSource}");
             var parameterBindings = executeSql.ParameterBindings;
             foreach (IDTSParameterBinding parameterBinding in parameterBindings)
             {
@@ -164,6 +176,7 @@ namespace EtlPackage
                 Debug.WriteLine($"ParameterDirection: {parameterBinding.ParameterDirection}");
                 Debug.IndentLevel -= 1;
             }
+            _md.NestedLevel -= 1;
         }
         private void ParseDataFlow(TaskHost taskHost)
         {
@@ -173,6 +186,8 @@ namespace EtlPackage
             string destinationConnectionManagerID = null;
             Debug.Print($"Data Flow Task: {taskHost.Name}");
             Debug.IndentLevel += 1;
+            _md.WriteTitle($"Data Flow Task: {taskHost.Name}");
+            _md.NestedLevel += 1;
             MainPipe mainPipe = taskHost.InnerObject as MainPipe;
             IDTSComponentMetaDataCollection100 metaDataCollection = mainPipe.ComponentMetaDataCollection;
             // loop over all components (eg. Destination, Source, Derived Column, etc)
@@ -224,6 +239,7 @@ namespace EtlPackage
                                 Debug.Print($"{nameof(customProperty.Name)}: {customProperty.Name}");
                                 Debug.Print($"{nameof(customProperty.Value)}: {customProperty.Value}");
                                 destinationTableName = valueStr;
+                                _md.WriteDataFlowDestinationTable(destinationTableName);
                             }
                         }
                         Debug.IndentLevel -= 1;
@@ -242,6 +258,7 @@ namespace EtlPackage
                                 Debug.Print($"{nameof(customProperty.Name)}: {customProperty.Name}");
                                 Debug.Print($"{nameof(customProperty.Value)}: {customProperty.Value}");
                                 sourceQuery = valueStr;
+                                _md.WriteCode(sourceQuery);
                             }
                         }
                         Debug.IndentLevel -= 1;
@@ -266,6 +283,8 @@ namespace EtlPackage
                     sourceQuery;
             }
             sourceQuery.ToFile($"{Path.Combine(Utilities.Cwd(), destinationTableName + ".sql")}");
+            _md.NestedLevel -= 1;
+
         }
     }
 }
