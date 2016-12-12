@@ -10,6 +10,29 @@ namespace EtlPackage
 {
     public static class Utilities
     {
+        public static void CrawlRepos()
+        {
+            var pkg_dir_path = @"C:\Users\user\Dropbox\Vault";
+            CrawlRepos(pkg_dir_path);
+        }
+        public static void CrawlRepos(string pkg_dir_path)
+        {
+            Debug.WriteLine($"crawling repo path: {pkg_dir_path}...");
+            var _repo_root = new DirectoryInfo(pkg_dir_path);
+            var pkg_file_infos = _repo_root.GetFiles("*.dtsx");
+            foreach (var pkg_file_info in pkg_file_infos)
+            {
+                var etl_rdr = new EtlPackageReader(pkg_file_info.FullName);
+                etl_rdr.ReadExecutables();
+            }
+            var sub_dirs = _repo_root.GetDirectories();
+            foreach (var sub_dir in sub_dirs)
+            {
+                CrawlRepos(sub_dir.FullName);
+            }
+            Debug.WriteLine($"repo path crawl complete({pkg_dir_path})");
+
+        }
         public static void StartUp()
         {
 

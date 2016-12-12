@@ -172,6 +172,10 @@ namespace EtlPackage
             Debug.Write(x);
             Debug.Write(re.Match(x).Groups[0]);
         }
+        public static void test_RepoCrawl()
+        {
+            Utilities.CrawlRepos();
+        }
         static int Main(string[] args)
         {
             TextWriterTraceListener debugWriter = new TextWriterTraceListener(System.Console.Out);
@@ -183,7 +187,7 @@ namespace EtlPackage
             //tables_to_views();
             //build_SharePointLogEtl();
 
-            test_EtlPackageReader_Msdb();
+            test_RepoCrawl();
             //test_MarkDownWriter();
             //test_regex();
 

@@ -27,7 +27,7 @@ namespace EtlPackage
             {
                 Debug.WriteLine($"package file found on filesystem\nloading...");
                 _package = _application.LoadPackage(etlPackagePath, idtsEvents);
-                _md = new MarkDownWriter(Path.GetFileNameWithoutExtension(etlPackagePath)+".md");
+                _md = new MarkDownWriter($"{Path.GetDirectoryName(etlPackagePath)}/{Path.GetFileNameWithoutExtension(etlPackagePath)}.md");
             }
             else
             {
@@ -72,6 +72,7 @@ namespace EtlPackage
         {
             Executables executables = _package.Executables;
             ReadExecutables(executables);
+            _md.Close();
         }
         public void ReadExecutables(Executables executables)
         {
@@ -162,7 +163,6 @@ namespace EtlPackage
             Debug.Print($"Execute Sql Task: {taskHost.Name}");
             Debug.IndentLevel += 1;
             _md.WriteTitle($"Execute Sql Task: {taskHost.Name}");
-            _md.NestedLevel += 1;
             ExecuteSQLTask executeSql = taskHost.InnerObject as ExecuteSQLTask;
             Debug.WriteLine($"Connection: {executeSql.Connection}");
             Debug.WriteLine($"SqlStatementSource: {executeSql.SqlStatementSource}");
@@ -176,7 +176,6 @@ namespace EtlPackage
                 Debug.WriteLine($"ParameterDirection: {parameterBinding.ParameterDirection}");
                 Debug.IndentLevel -= 1;
             }
-            _md.NestedLevel -= 1;
         }
         private void ParseDataFlow(TaskHost taskHost)
         {
@@ -187,7 +186,6 @@ namespace EtlPackage
             Debug.Print($"Data Flow Task: {taskHost.Name}");
             Debug.IndentLevel += 1;
             _md.WriteTitle($"Data Flow Task: {taskHost.Name}");
-            _md.NestedLevel += 1;
             MainPipe mainPipe = taskHost.InnerObject as MainPipe;
             IDTSComponentMetaDataCollection100 metaDataCollection = mainPipe.ComponentMetaDataCollection;
             // loop over all components (eg. Destination, Source, Derived Column, etc)
@@ -283,7 +281,6 @@ namespace EtlPackage
                     sourceQuery;
             }
             sourceQuery.ToFile($"{Path.Combine(Utilities.Cwd(), destinationTableName + ".sql")}");
-            _md.NestedLevel -= 1;
 
         }
     }
