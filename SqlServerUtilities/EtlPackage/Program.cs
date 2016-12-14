@@ -27,6 +27,7 @@ namespace EtlPackage
                 new EtlPackageReader(
                     "C:\\Users\\gcrowell\\Dropbox\\Vault\\ECommunity\\Dev\\Landing\\ETL\\ChildPARISLandingA_E.dtsx");
             //EtlPackageReader etlPackageReader = new EtlPackageReader("C:\\Users\\user\\Source\\Repos\\SqlServerUtilities\\SqlServerUtilities\\SandBox\\\\ChildPARISLandingA_E.dtsx");
+            MarkDownWriter md = new MarkDownWriter("readme.md", etlPackageReader);
             etlPackageReader.ReadExecutables();
         }
         static void test_EtlPackageReader_Msdb()
@@ -148,7 +149,7 @@ namespace EtlPackage
         }
         public static void test_MarkDownWriter()
         {
-            MarkDownWriter md = new MarkDownWriter("fuckit.md");
+            MarkDownWriter md = new MarkDownWriter("fuckit.md", new EtlPackageReader(""));
             md.WriteTitle("this is a title");
             md.WriteCode("SELECT * FROM nowhere;");
             md.Close();
@@ -187,10 +188,10 @@ namespace EtlPackage
             //tables_to_views();
             //build_SharePointLogEtl();
 
-            test_RepoCrawl();
+            //test_RepoCrawl();
             //test_MarkDownWriter();
             //test_regex();
-
+            test_EtlPackageReader_FileSystem();
 
             Console.WriteLine($"\n\nexecution complete.  press any key to exit.");
             Console.ReadKey();

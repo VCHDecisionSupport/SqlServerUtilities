@@ -8,13 +8,30 @@ using System.Threading.Tasks;
 
 namespace EtlPackage
 {
+    // subscribes to events from EtlPackageReader objects
     public class MarkDownWriter : StreamWriter
     {
-        public MarkDownWriter(string path) : base(path)
+        public MarkDownWriter(string path, EtlPackageReader etlPackageReader) : base(path)
         {
             base.AutoFlush = true;
             NestedLevel = 1;
-            WriteTitle(Path.GetFileNameWithoutExtension(path));
+            etlPackageReader.RaiseDataFlowEvent += HandleDataFlowEvent;
+            etlPackageReader.RaisePackageEvent += HandlePackageEvent;
+            etlPackageReader.RaiseExecuteSqlEvent += HandleExecuteSqlEvent;
+        }
+        // Define what actions to take when the event is raised.
+        void HandleDataFlowEvent(object sender, DataFlowEventArgs dataFlowEventArgs)
+        {
+            this.NestedLevel = dataFlowEventArgs.NestedLevel;
+            WriteTitle(dataFlowEventArgs.DataFlowName);
+        }
+        void HandlePackageEvent(object sender, PackageEventArgs packageEventArgs)
+        {
+            WriteTitle(packageEventArgs.PackageName);
+        }
+        void HandleExecuteSqlEvent(object sender, ExecuteSqlEventArgs executeSqlEventArgs)
+        {
+            WriteTitle(executeSqlEventArgs.ExecuteSqlName);
         }
         public int NestedLevel { get; set; }
         public void WriteTitle(string title)
