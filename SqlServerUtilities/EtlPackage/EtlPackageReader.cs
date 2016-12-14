@@ -13,11 +13,27 @@ using Sequence = Microsoft.SqlServer.Dts.Runtime.Sequence;
 
 namespace EtlPackage
 {
+    // https://msdn.microsoft.com/en-us/library/w369ty8x.aspx
+    public class DataFlowEventArgs : EventArgs
+    {
+        string DestinationTableName { get; set; }
+        string SourceQuery { get; set; }
+        string SourceConnection { get; set; }
+        public DataFlowEventArgs()
+        {
+
+        }
+    }
     public class EtlPackageReader
     {
         private Application _application;
         private Package _package;
         private MarkDownWriter _md;
+        public event EventHandler<DataFlowEventArgs> RaiseDataFlowEvent;
+        protected virtual void OnRaiseDataFlowEvent(DataFlowEventArgs dataFlowEventArgs)
+        {
+
+        }
         public EtlPackageReader(string etlPackagePath)
         {
             Console.WriteLine($"EtlPackageReader({etlPackagePath})...");
