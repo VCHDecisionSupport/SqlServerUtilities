@@ -1,0 +1,31 @@
+<Biml xmlns="http://schemas.varigence.com/biml.xsd">
+  <#@ template tier="1" #>
+    <#@ import namespace="Varigence.Biml.CoreLowerer.SchemaManagement" #>
+
+      <# var includedSchemas = new List<string>{"dbo"}; #>
+        <# var includedTables = new List<string>{"ReferralFact", "CaseNoteHeaderFact"}; #>
+          <# var db_con = RootNode.OleDbConnections["DEV"]; #>
+      <# var db_meta_data = db_con.GetDatabaseSchema(includedSchemas, includedTables, ImportOptions.ExcludeCheckConstraint | ImportOptions.ExcludeColumnDefault | ImportOptions.ExcludeForeignKey | ImportOptions.ExcludeIdentity | ImportOptions.ExcludeIndex | ImportOptions.ExcludePrimaryKey | ImportOptions.ExcludeUniqueKey); #>
+      <Packages>
+        <Package Name="SharePointLoggingImport" ConstraintMode="Parallel">
+          <Tasks>
+            <# foreach (var table in db_meta_data.TableNodes) { #>
+            <ExecuteSQL Name="Drop and Create <#=table.Schema#>_<#=table.Name#>" ConnectionName="DEV">
+              <DirectInput><#=table.ScopedName#></DirectInput>
+            </ExecuteSQL>
+
+              <Dataflow Name="Data Flow <#=table.Schema#>_<#=table.Name#> ">
+                <Transformations>
+                  <OleDbSource Name="Data Source" ConnectionName="DEV">
+                      <DirectInput>SELECT <#=table.GetColumnList()#> FROM <#=table.SchemaQualifiedName#>;</DirectInput>
+                  </OleDbSource>
+                  <OleDbDestination Name="Data Destination" ConnectionName="TEST">
+                    <ExternalTableOutput Table="<#=table.ScopedName#>" />
+                    </OleDbDestination>
+                </Transformations>
+              </Dataflow>
+              <# } #>
+          </Tasks>
+        </Package>
+      </Packages>
+</Biml>

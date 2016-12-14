@@ -260,7 +260,7 @@ namespace SqlServerUtilities
         }
         static void test_EtlPackage_Reader()
         {
-            string pkgPath = @"Z:\GITHUB\SqlServerUtilities\SqlServerUtilities\EtlTest\PopulateCommunityMart.dtsx";
+            string pkgPath = @"C:\Users\gcrowell\Dropbox\Vault\Dev\CommunityMart\ETL\WorkingETL\WorkingETL\PopulateCommunityMart.dtsx";
             //string pkgPath = @"CommunityMart SPDBDECSUP04-STDBDECSUP01.dtsx";
             //pkgPath = Path.Combine(CommonUtils.CommonUtils.cwd(), pkgPath);
             EtlPackage pkg = new EtlPackage(pkgPath);
@@ -398,12 +398,7 @@ namespace SqlServerUtilities
                 stopWatch.Start();
                 CommonUtils.CommonUtils.PreExecutionSetup();
 
-                Server server = SchemaReader.GetServer("STDBDECSUP01");
-                Database database = server.Databases["DSDW"];
-                test_ViewToTable();
-
-
-                //SqlConnection sql_connection = SchemaReader.getSqlConnection("STDBDECSUP01");
+                test_EtlPackage_Reader();
 
                 stopWatch.Stop();
                 // Get the elapsed time as a TimeSpan value.
