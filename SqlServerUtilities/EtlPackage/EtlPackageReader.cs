@@ -40,16 +40,51 @@ namespace EtlPackage
             this.PackageName = PackageName;
         }
     }
-    public class ExecuteSqlEventArgs: EventArgs
+    public class ExecuteSqlEventArgs : EventArgs
     {
+        public int NestedLevel { get; set; }
         public string ExecuteSqlName { get; set; }
-        public ExecuteSqlEventArgs(string ExecuteSqlName)
+        public string SqlSource { get; set; }
+        public ExecuteSqlEventArgs(string ExecuteSqlName, int NestedLevel, string SqlSource)
         {
             this.ExecuteSqlName = ExecuteSqlName;
+            this.SqlSource = SqlSource;
+            this.NestedLevel = NestedLevel;
         }
     }
-        // publisher of DataFlowEventArgs events
-        public class EtlPackageReader
+    public class ChildPackageEventArgs : EventArgs
+    {
+        public int NestedLevel { get; set; }
+        public string ChildPackageEventName { get; set; }
+        public ChildPackageEventArgs(string ChildPackageEventName, int NestedLevel)
+        {
+            this.ChildPackageEventName = ChildPackageEventName;
+            this.NestedLevel = NestedLevel;
+        }
+    }
+    public class LoopEventArgs : EventArgs
+    {
+        public int NestedLevel { get; set; }
+        public string LoopEventName { get; set; }
+        public LoopEventArgs(string LoopEventName, int NestedLevel)
+        {
+            this.LoopEventName = LoopEventName;
+            this.NestedLevel = NestedLevel;
+        }
+    }
+    public class SequenceEventArgs : EventArgs
+    {
+        public int NestedLevel { get; set; }
+        public string SequenceEventName { get; set; }
+        public SequenceEventArgs(string SequenceEventName, int NestedLevel)
+        {
+            this.SequenceEventName = SequenceEventName;
+            this.NestedLevel = NestedLevel;
+        }
+    }
+
+    // publisher of DataFlowEventArgs events
+    public class EtlPackageReader
     {
         private Application _application;
         private Package _package;
@@ -57,6 +92,9 @@ namespace EtlPackage
         public event EventHandler<PackageEventArgs> RaisePackageEvent;
         public event EventHandler<DataFlowEventArgs> RaiseDataFlowEvent;
         public event EventHandler<ExecuteSqlEventArgs> RaiseExecuteSqlEvent;
+        public event EventHandler<SequenceEventArgs> RaiseSequenceEvent;
+        public event EventHandler<LoopEventArgs> RaiseLoopEvent;
+        public event EventHandler<ChildPackageEventArgs> RaiseChildPackageEvent;
         private int _nestedLevel = 1;
         protected virtual void OnRaiseDataFlowEvent(DataFlowEventArgs dataFlowEventArgs)
         {
@@ -101,6 +139,45 @@ namespace EtlPackage
 
                 // Use the () operator to raise the event.
                 handler(this, executeSqlEventArgs);
+            }
+        }
+        protected virtual void OnRaiseSequenceEvent(SequenceEventArgs SequenceEventArgs)
+        {
+            EventHandler<SequenceEventArgs> handler = RaiseSequenceEvent;
+            // Event will be null if there are no subscribers
+            if (handler != null)
+            {
+                // Format the string to send inside the CustomEventArgs parameter
+                //e.Message += String.Format(" at {0}", DateTime.Now.ToString());
+
+                // Use the () operator to raise the event.
+                handler(this, SequenceEventArgs);
+            }
+        }
+        protected virtual void OnRaiseLoopEvent(LoopEventArgs LoopEventArgs)
+        {
+            EventHandler<LoopEventArgs> handler = RaiseLoopEvent;
+            // Event will be null if there are no subscribers
+            if (handler != null)
+            {
+                // Format the string to send inside the CustomEventArgs parameter
+                //e.Message += String.Format(" at {0}", DateTime.Now.ToString());
+
+                // Use the () operator to raise the event.
+                handler(this, LoopEventArgs);
+            }
+        }
+        protected virtual void OnRaiseChildPackageEvent(ChildPackageEventArgs ChildPackageEventArgs)
+        {
+            EventHandler<ChildPackageEventArgs> handler = RaiseChildPackageEvent;
+            // Event will be null if there are no subscribers
+            if (handler != null)
+            {
+                // Format the string to send inside the CustomEventArgs parameter
+                //e.Message += String.Format(" at {0}", DateTime.Now.ToString());
+
+                // Use the () operator to raise the event.
+                handler(this, ChildPackageEventArgs);
             }
         }
         public EtlPackageReader(string etlPackagePath)
@@ -202,6 +279,7 @@ namespace EtlPackage
                     //Console.WriteLine(string.Format(fmt, e.GetType().Name, seq.Name));
                     //logFile.WriteLine(string.Format(fmt, e.GetType().Name, seq.Name));
                     Debug.Print($"executable name: {sequence.Name}");
+                    OnRaiseSequenceEvent(new SequenceEventArgs(sequence.Name, _nestedLevel));
                     //_md.WriteTitle($"Sequence: {sequence.Name}");
                     ReadExecutables(sequence.Executables);
                 }
@@ -214,6 +292,7 @@ namespace EtlPackage
                     //Console.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                     //logFile.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                     Debug.Print($"executable name: {loop.Name}");
+                    OnRaiseLoopEvent(new LoopEventArgs(loop.Name, _nestedLevel));
                     //_md.WriteTitle($"ForEachLoop: {loop.Name}");
                     ReadExecutables(loop.Executables);
                 }
@@ -227,20 +306,22 @@ namespace EtlPackage
                     //logFile.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                     //string.Format("{0}: {1}", executable.GetType().Name, loop.Name).Print(tabCount, ref LogFile);
                     Debug.Print($"executable name: {loop.Name}");
+                    OnRaiseLoopEvent(new LoopEventArgs(loop.Name, _nestedLevel));
                     //_md.WriteTitle($"ForLoop: {loop.Name}");
                     ReadExecutables(loop.Executables);
                 }
                 else if (executable.GetType() == typeof(Package))
                 {
                     //Console.WriteLine(string.Format("\tForEachLoop", e.GetType()));
-                    Package loop = executable as Package;
+                    Package pkg = executable as Package;
                     //Console.WriteLine(string.Format("\t\tName = {0}", loop.Name));
                     //Console.WriteLine(string.Format("\t\tGetExecutionPath() = {0}", loop.GetExecutionPath()));
                     //Console.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                     //logFile.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
-                    Debug.Print($"Child Package: {loop.Name}");
+                    OnRaiseChildPackageEvent(new ChildPackageEventArgs(pkg.Name, _nestedLevel));
+                    Debug.Print($"Child Package: {pkg.Name}");
                     //_md.WriteTitle($"executable name: {loop.Name}");
-                    ReadExecutables(loop.Executables);
+                    ReadExecutables(pkg.Executables);
                 }
                 else
                 {
@@ -275,7 +356,7 @@ namespace EtlPackage
             }
             _nestedLevel -= 1;
             Debug.IndentLevel = _nestedLevel;
-            OnRaiseExecuteSqlEvent(new ExecuteSqlEventArgs(taskHost.Name));
+            OnRaiseExecuteSqlEvent(new ExecuteSqlEventArgs(taskHost.Name, _nestedLevel, executeSql.SqlStatementSource));
         }
         private void ParseDataFlow(TaskHost taskHost)
         {
@@ -368,9 +449,8 @@ namespace EtlPackage
                         Debug.IndentLevel = _nestedLevel;
                     }
                 }
-
-                OnRaiseDataFlowEvent(new DataFlowEventArgs(taskHost.Name, null, sourceQuery, null, destinationTableName, _nestedLevel));
             }
+            OnRaiseDataFlowEvent(new DataFlowEventArgs(taskHost.Name, null, sourceQuery, null, destinationTableName, _nestedLevel));
             if (sourceQuery == null)
             {
                 Debug.Print($"sourceQuery not found");

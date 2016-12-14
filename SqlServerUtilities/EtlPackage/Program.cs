@@ -45,6 +45,7 @@ namespace EtlPackage
             }
             foreach (string etlPackagePath in etlPackagePaths)
             {
+
                 EtlPackageReader etlPackageReader = new EtlPackageReader(etlPackagePath);
                 etlPackageReader.ReadConnectionManagers();
                 etlPackageReader.ReadExecutables();
@@ -182,7 +183,7 @@ namespace EtlPackage
             TextWriterTraceListener debugWriter = new TextWriterTraceListener(System.Console.Out);
             Debug.Listeners.Add(debugWriter);
 
-            TextWriterTraceListener textDebugger = new TextWriterTraceListener(Utilities.Cwd() + "/pkg.md");
+            TextWriterTraceListener textDebugger = new TextWriterTraceListener(Utilities.Cwd() + "/EtlPackageReaderLog.md");
             Debug.Listeners.Add(textDebugger);
 
             //tables_to_views();
@@ -191,7 +192,8 @@ namespace EtlPackage
             //test_RepoCrawl();
             //test_MarkDownWriter();
             //test_regex();
-            test_EtlPackageReader_FileSystem();
+            //test_EtlPackageReader_FileSystem();
+            test_EtlPackageReaderFolder();
 
             Console.WriteLine($"\n\nexecution complete.  press any key to exit.");
             Console.ReadKey();

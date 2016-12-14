@@ -18,12 +18,18 @@ namespace EtlPackage
             etlPackageReader.RaiseDataFlowEvent += HandleDataFlowEvent;
             etlPackageReader.RaisePackageEvent += HandlePackageEvent;
             etlPackageReader.RaiseExecuteSqlEvent += HandleExecuteSqlEvent;
+            etlPackageReader.RaiseChildPackageEvent += HandleChildPackageEvent;
+            etlPackageReader.RaiseLoopEvent += HandleLoopEvent;
+            etlPackageReader.RaiseSequenceEvent += HandleSequenceEvent;
+            etlPackageReader.RaiseChildPackageEvent += HandleChildPackageEvent;
         }
         // Define what actions to take when the event is raised.
         void HandleDataFlowEvent(object sender, DataFlowEventArgs dataFlowEventArgs)
         {
             this.NestedLevel = dataFlowEventArgs.NestedLevel;
-            WriteTitle(dataFlowEventArgs.DataFlowName);
+            string dataFlowMarkDown = $"__DataFlow: {dataFlowEventArgs.DataFlowName}__\n\t_Destination Table: {dataFlowEventArgs.DestinationTableName}_\n\n";
+            this.Write(dataFlowMarkDown);
+            this.WriteCode(dataFlowEventArgs.SourceQuery);
         }
         void HandlePackageEvent(object sender, PackageEventArgs packageEventArgs)
         {
@@ -31,7 +37,25 @@ namespace EtlPackage
         }
         void HandleExecuteSqlEvent(object sender, ExecuteSqlEventArgs executeSqlEventArgs)
         {
-            WriteTitle(executeSqlEventArgs.ExecuteSqlName);
+            this.NestedLevel = executeSqlEventArgs.NestedLevel;
+            string executeSqlMarkDown = $"__Execute Sql: {executeSqlEventArgs.ExecuteSqlName}__\n\n";
+            this.Write(executeSqlMarkDown);
+            WriteCode(executeSqlEventArgs.SqlSource);
+        }
+        void HandleChildPackageEvent(object sender, ChildPackageEventArgs childPackageArgs)
+        {
+            this.NestedLevel = childPackageArgs.NestedLevel;
+            WriteTitle(childPackageArgs.ChildPackageEventName);
+        }
+        void HandleLoopEvent(object sender, LoopEventArgs loopEventArgs)
+        {
+            this.NestedLevel = loopEventArgs.NestedLevel;
+            WriteTitle(loopEventArgs.LoopEventName);
+        }
+        void HandleSequenceEvent(object sender, SequenceEventArgs sequenceEventArgs)
+        {
+            this.NestedLevel = sequenceEventArgs.NestedLevel;
+            WriteTitle($"Sequence: {sequenceEventArgs.SequenceEventName}");
         }
         public int NestedLevel { get; set; }
         public void WriteTitle(string title)
