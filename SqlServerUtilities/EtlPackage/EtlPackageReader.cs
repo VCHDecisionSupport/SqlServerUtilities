@@ -45,11 +45,13 @@ namespace EtlPackage
         public int NestedLevel { get; set; }
         public string ExecuteSqlName { get; set; }
         public string SqlSource { get; set; }
-        public ExecuteSqlEventArgs(string ExecuteSqlName, int NestedLevel, string SqlSource)
+        public List<string> ParameterNames { get; set; }
+        public ExecuteSqlEventArgs(string ExecuteSqlName, int NestedLevel, string SqlSource, List<string> ParameterNames)
         {
             this.ExecuteSqlName = ExecuteSqlName;
             this.SqlSource = SqlSource;
             this.NestedLevel = NestedLevel;
+            this.ParameterNames = ParameterNames;
         }
     }
     public class ChildPackageEventArgs : EventArgs
@@ -236,14 +238,23 @@ namespace EtlPackage
             _nestedLevel -= 1;
             Debug.IndentLevel = _nestedLevel;
         }
-        public void ReadExecutables()
+        public void ProcessPackage()
+        {
+            List<string> to = new List<string>();
+            List<string> from = new List<string>();
+            foreach (var precedenceConstraint in _package.PrecedenceConstraints)
+            {
+                Debug.WriteLine(precedenceConstraint.ConstrainedExecutable.ToString());
+            }
+        }
+        private void ReadExecutables()
         {
             OnRaisePackageEvent(new PackageEventArgs(_package.Name));
             Executables executables = _package.Executables;
             ReadExecutables(executables);
             //_md.Close();
         }
-        public void ReadExecutables(Executables executables)
+        private void ReadExecutables(Executables executables)
         {
             _nestedLevel += 1;
             Debug.IndentLevel = _nestedLevel;
@@ -344,6 +355,7 @@ namespace EtlPackage
             Debug.WriteLine($"SqlStatementSource: {executeSql.SqlStatementSource}");
             //_md.WriteCode($"{executeSql.SqlStatementSource}");
             var parameterBindings = executeSql.ParameterBindings;
+            List<string> parameterNames = new List<string>();
             foreach (IDTSParameterBinding parameterBinding in parameterBindings)
             {
                 Debug.WriteLine($"DtsVariableName: {parameterBinding.DtsVariableName}");
@@ -353,10 +365,11 @@ namespace EtlPackage
                 Debug.WriteLine($"ParameterDirection: {parameterBinding.ParameterDirection}");
                 _nestedLevel -= 1;
                 Debug.IndentLevel = _nestedLevel;
+                parameterNames.Add(parameterBinding.DtsVariableName);
             }
             _nestedLevel -= 1;
             Debug.IndentLevel = _nestedLevel;
-            OnRaiseExecuteSqlEvent(new ExecuteSqlEventArgs(taskHost.Name, _nestedLevel, executeSql.SqlStatementSource));
+            OnRaiseExecuteSqlEvent(new ExecuteSqlEventArgs(taskHost.Name, _nestedLevel, executeSql.SqlStatementSource, parameterNames));
         }
         private void ParseDataFlow(TaskHost taskHost)
         {
@@ -370,6 +383,7 @@ namespace EtlPackage
             // replaced with event handler pattern
             //_md.WriteTitle($"Data Flow Task: {taskHost.Name}");
             MainPipe mainPipe = taskHost.InnerObject as MainPipe;
+            
             IDTSComponentMetaDataCollection100 metaDataCollection = mainPipe.ComponentMetaDataCollection;
             // loop over all components (eg. Destination, Source, Derived Column, etc)
             foreach (IDTSComponentMetaData100 componentMetaData in metaDataCollection)

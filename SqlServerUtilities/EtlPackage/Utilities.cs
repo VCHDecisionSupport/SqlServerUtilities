@@ -23,7 +23,7 @@ namespace EtlPackage
             foreach (var pkg_file_info in pkg_file_infos)
             {
                 var etl_rdr = new EtlPackageReader(pkg_file_info.FullName);
-                etl_rdr.ReadExecutables();
+                etl_rdr.ProcessPackage();
             }
             var sub_dirs = _repo_root.GetDirectories();
             foreach (var sub_dir in sub_dirs)
