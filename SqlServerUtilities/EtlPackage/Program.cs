@@ -13,8 +13,8 @@ namespace EtlPackage
             TextWriterTraceListener debugWriter = new TextWriterTraceListener(System.Console.Out);
             Debug.Listeners.Add(debugWriter);
 
-            TextWriterTraceListener textDebugger = new TextWriterTraceListener(Utilities.Cwd() + "/EtlPackageReaderLog.md");
-            Debug.Listeners.Add(textDebugger);
+            //TextWriterTraceListener textDebugger = new TextWriterTraceListener(Utilities.Cwd() + "/EtlPackageReaderLog.md");
+            //Debug.Listeners.Add(textDebugger);
 
             //tables_to_views();
             //build_SharePointLogEtl();

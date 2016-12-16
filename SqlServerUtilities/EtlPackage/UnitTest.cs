@@ -37,15 +37,19 @@ namespace EtlPackage
         public static void test_EtlPackageReaderFolder()
         {
             string currentWorkingDirectory = Utilities.Cwd();
+            
             var etlPackagePaths = Directory.EnumerateFiles(currentWorkingDirectory, "*.dtsx").ToList();
             if (etlPackagePaths.Count == 0)
             {
                 Console.WriteLine($"No *.dtsx files found in directory: {currentWorkingDirectory}");
             }
+            MarkDownWriter md = new MarkDownWriter($"{currentWorkingDirectory}/readme.md");
             foreach (string etlPackagePath in etlPackagePaths)
             {
 
                 EtlPackageReader etlPackageReader = new EtlPackageReader(etlPackagePath);
+                PackageTableSqlInserter tab_pkg_map = new PackageTableSqlInserter(SqlUtilities.GetSqlConnection("STDBDECSUP01"), etlPackageReader);
+                md.SetEtlPackageReader(etlPackageReader);
                 etlPackageReader.ReadConnectionManagers();
                 etlPackageReader.ProcessPackage();
             }

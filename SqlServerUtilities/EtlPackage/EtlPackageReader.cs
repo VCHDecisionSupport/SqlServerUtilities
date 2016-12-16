@@ -14,75 +14,66 @@ using Sequence = Microsoft.SqlServer.Dts.Runtime.Sequence;
 namespace EtlPackage
 {
     // https://msdn.microsoft.com/en-us/library/w369ty8x.aspx
-    public class DataFlowEventArgs : EventArgs
+    public enum ExecutableTypeEnum
     {
-        public string DataFlowName { get; set; }
+        Package,
+        Sequence,
+        Loop,
+        DataFlow,
+        ExecuteSql,
+        ChildPackage
+    }
+    public class SsisExecutable : EventArgs
+    {
+        public string ExecutableName { get; set; }
+        public int NestedLevel { get; set; }
+        public ExecutableTypeEnum ExecutableType { get; set; }
+        public SsisExecutable(string ExecutableName, ExecutableTypeEnum ExecutableType)
+        {
+            this.ExecutableName = ExecutableName;
+            this.ExecutableType = ExecutableType;
+            NestedLevel = 1;
+        }
+    }
+    public class DataFlowEventArgs : SsisExecutable
+    {
         public string SourceDatabaseName { get; set; }
         public string SourceQuery { get; set; }
         public string DestinationDatabaseName { get; set; }
         public string DestinationTableName { get; set; }
-        public int NestedLevel { get; set; }
-        public DataFlowEventArgs(string DataFlowName, string SourceDatabaseName, string SourceQuery, string DestinationDatabaseName, string DestinationTableName, int NestedLevel)
+        public DataFlowEventArgs(string DataFlowName, string SourceDatabaseName, string SourceQuery, string DestinationDatabaseName, string DestinationTableName, int NestedLevel) : base(DataFlowName, ExecutableTypeEnum.DataFlow)
         {
-            this.DataFlowName = DataFlowName;
             this.SourceDatabaseName = SourceDatabaseName;
             this.SourceQuery = SourceQuery;
             this.DestinationDatabaseName = DestinationDatabaseName;
             this.DestinationTableName = DestinationTableName;
-            this.NestedLevel = NestedLevel;
         }
     }
-    public class PackageEventArgs : EventArgs
+    public class PackageEventArgs : SsisExecutable
     {
-        public string PackageName { get; set; }
-        public PackageEventArgs(string PackageName)
-        {
-            this.PackageName = PackageName;
-        }
+        public PackageEventArgs(string PackageName) : base(PackageName, ExecutableTypeEnum.Package) { }
     }
-    public class ExecuteSqlEventArgs : EventArgs
+    public class ExecuteSqlEventArgs : SsisExecutable
     {
-        public int NestedLevel { get; set; }
-        public string ExecuteSqlName { get; set; }
         public string SqlSource { get; set; }
         public List<string> ParameterNames { get; set; }
-        public ExecuteSqlEventArgs(string ExecuteSqlName, int NestedLevel, string SqlSource, List<string> ParameterNames)
+        public ExecuteSqlEventArgs(string ExecuteSqlName, int NestedLevel, string SqlSource, List<string> ParameterNames) : base(ExecuteSqlName, ExecutableTypeEnum.ExecuteSql)
         {
-            this.ExecuteSqlName = ExecuteSqlName;
             this.SqlSource = SqlSource;
-            this.NestedLevel = NestedLevel;
             this.ParameterNames = ParameterNames;
         }
     }
-    public class ChildPackageEventArgs : EventArgs
+    public class ChildPackageEventArgs : SsisExecutable
     {
-        public int NestedLevel { get; set; }
-        public string ChildPackageEventName { get; set; }
-        public ChildPackageEventArgs(string ChildPackageEventName, int NestedLevel)
-        {
-            this.ChildPackageEventName = ChildPackageEventName;
-            this.NestedLevel = NestedLevel;
-        }
+        public ChildPackageEventArgs(string ChildPackageEventName, int NestedLevel) : base(ChildPackageEventName, ExecutableTypeEnum.ChildPackage) { }
     }
-    public class LoopEventArgs : EventArgs
+    public class LoopEventArgs : SsisExecutable
     {
-        public int NestedLevel { get; set; }
-        public string LoopEventName { get; set; }
-        public LoopEventArgs(string LoopEventName, int NestedLevel)
-        {
-            this.LoopEventName = LoopEventName;
-            this.NestedLevel = NestedLevel;
-        }
+        public LoopEventArgs(string LoopEventName, int NestedLevel) : base(LoopEventName, ExecutableTypeEnum.Loop) { }
     }
-    public class SequenceEventArgs : EventArgs
+    public class SequenceEventArgs : SsisExecutable
     {
-        public int NestedLevel { get; set; }
-        public string SequenceEventName { get; set; }
-        public SequenceEventArgs(string SequenceEventName, int NestedLevel)
-        {
-            this.SequenceEventName = SequenceEventName;
-            this.NestedLevel = NestedLevel;
-        }
+        public SequenceEventArgs(string SequenceEventName, int NestedLevel) : base(SequenceEventName, ExecutableTypeEnum.Sequence) { }
     }
 
     // publisher of DataFlowEventArgs events
@@ -90,14 +81,20 @@ namespace EtlPackage
     {
         private Application _application;
         private Package _package;
-        //private MarkDownWriter _md;
+        public string PackageName
+        {
+            get
+            {
+                return _package.Name;
+            }
+        }
         public event EventHandler<PackageEventArgs> RaisePackageEvent;
         public event EventHandler<DataFlowEventArgs> RaiseDataFlowEvent;
         public event EventHandler<ExecuteSqlEventArgs> RaiseExecuteSqlEvent;
         public event EventHandler<SequenceEventArgs> RaiseSequenceEvent;
         public event EventHandler<LoopEventArgs> RaiseLoopEvent;
         public event EventHandler<ChildPackageEventArgs> RaiseChildPackageEvent;
-        private int _nestedLevel = 1;
+        private int NestedLevel { get; set; }
         protected virtual void OnRaiseDataFlowEvent(DataFlowEventArgs dataFlowEventArgs)
         {
             // Make a temporary copy of the event to avoid possibility of
@@ -223,20 +220,20 @@ namespace EtlPackage
         }
         public void ReadConnectionManagers()
         {
-            _nestedLevel += 1;
-            Debug.IndentLevel = _nestedLevel;
+            NestedLevel += 1;
+            Debug.IndentLevel = NestedLevel;
             foreach (ConnectionManager connectionManager in _package.Connections)
             {
                 Debug.Print($"Connection Manager Name: {connectionManager.Name}");
-                _nestedLevel += 1;
-                Debug.IndentLevel = _nestedLevel;
+                NestedLevel += 1;
+                Debug.IndentLevel = NestedLevel;
                 Debug.Print($"Connection Manager Server: {SqlUtilities.ExtractServerName(connectionManager.ConnectionString)}");
                 Debug.Print($"Connection Manager Database: {SqlUtilities.ExtractDatabaseName(connectionManager.ConnectionString)}");
-                _nestedLevel -= 1;
-                Debug.IndentLevel = _nestedLevel;
+                NestedLevel -= 1;
+                Debug.IndentLevel = NestedLevel;
             }
-            _nestedLevel -= 1;
-            Debug.IndentLevel = _nestedLevel;
+            NestedLevel -= 1;
+            Debug.IndentLevel = NestedLevel;
         }
         public void ProcessPackage()
         {
@@ -246,6 +243,7 @@ namespace EtlPackage
             {
                 Debug.WriteLine(precedenceConstraint.ConstrainedExecutable.ToString());
             }
+            ReadExecutables();
         }
         private void ReadExecutables()
         {
@@ -256,8 +254,8 @@ namespace EtlPackage
         }
         private void ReadExecutables(Executables executables)
         {
-            _nestedLevel += 1;
-            Debug.IndentLevel = _nestedLevel;
+            NestedLevel += 1;
+            Debug.IndentLevel = NestedLevel;
             //_md.NestedLevel += 1;
             foreach (Executable executable in executables)
             {
@@ -290,7 +288,7 @@ namespace EtlPackage
                     //Console.WriteLine(string.Format(fmt, e.GetType().Name, seq.Name));
                     //logFile.WriteLine(string.Format(fmt, e.GetType().Name, seq.Name));
                     Debug.Print($"executable name: {sequence.Name}");
-                    OnRaiseSequenceEvent(new SequenceEventArgs(sequence.Name, _nestedLevel));
+                    OnRaiseSequenceEvent(new SequenceEventArgs(sequence.Name, NestedLevel));
                     //_md.WriteTitle($"Sequence: {sequence.Name}");
                     ReadExecutables(sequence.Executables);
                 }
@@ -303,7 +301,7 @@ namespace EtlPackage
                     //Console.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                     //logFile.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                     Debug.Print($"executable name: {loop.Name}");
-                    OnRaiseLoopEvent(new LoopEventArgs(loop.Name, _nestedLevel));
+                    OnRaiseLoopEvent(new LoopEventArgs(loop.Name, NestedLevel));
                     //_md.WriteTitle($"ForEachLoop: {loop.Name}");
                     ReadExecutables(loop.Executables);
                 }
@@ -317,7 +315,7 @@ namespace EtlPackage
                     //logFile.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                     //string.Format("{0}: {1}", executable.GetType().Name, loop.Name).Print(tabCount, ref LogFile);
                     Debug.Print($"executable name: {loop.Name}");
-                    OnRaiseLoopEvent(new LoopEventArgs(loop.Name, _nestedLevel));
+                    OnRaiseLoopEvent(new LoopEventArgs(loop.Name, NestedLevel));
                     //_md.WriteTitle($"ForLoop: {loop.Name}");
                     ReadExecutables(loop.Executables);
                 }
@@ -329,7 +327,7 @@ namespace EtlPackage
                     //Console.WriteLine(string.Format("\t\tGetExecutionPath() = {0}", loop.GetExecutionPath()));
                     //Console.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                     //logFile.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
-                    OnRaiseChildPackageEvent(new ChildPackageEventArgs(pkg.Name, _nestedLevel));
+                    OnRaiseChildPackageEvent(new ChildPackageEventArgs(pkg.Name, NestedLevel));
                     Debug.Print($"Child Package: {pkg.Name}");
                     //_md.WriteTitle($"executable name: {loop.Name}");
                     ReadExecutables(pkg.Executables);
@@ -341,14 +339,14 @@ namespace EtlPackage
                     Debug.Print($"\n\n\n\tparsing of {executable.GetType()} executable type is NOT IMPLEMENTED\n\n\n");
                 }
             }
-            _nestedLevel -= 1;
-            Debug.IndentLevel = _nestedLevel;
+            NestedLevel -= 1;
+            Debug.IndentLevel = NestedLevel;
         }
         private void ParseExecuteSql(TaskHost taskHost)
         {
             Debug.Print($"Execute Sql Task: {taskHost.Name}");
-            _nestedLevel += 1;
-            Debug.IndentLevel = _nestedLevel;
+            NestedLevel += 1;
+            Debug.IndentLevel = NestedLevel;
             //_md.WriteTitle($"Execute Sql Task: {taskHost.Name}");
             ExecuteSQLTask executeSql = taskHost.InnerObject as ExecuteSQLTask;
             Debug.WriteLine($"Connection: {executeSql.Connection}");
@@ -359,31 +357,33 @@ namespace EtlPackage
             foreach (IDTSParameterBinding parameterBinding in parameterBindings)
             {
                 Debug.WriteLine($"DtsVariableName: {parameterBinding.DtsVariableName}");
-                _nestedLevel += 1;
-                Debug.IndentLevel = _nestedLevel;
+                NestedLevel += 1;
+                Debug.IndentLevel = NestedLevel;
                 Debug.WriteLine($"DataType Number: {parameterBinding.DataType}");
                 Debug.WriteLine($"ParameterDirection: {parameterBinding.ParameterDirection}");
-                _nestedLevel -= 1;
-                Debug.IndentLevel = _nestedLevel;
+                NestedLevel -= 1;
+                Debug.IndentLevel = NestedLevel;
                 parameterNames.Add(parameterBinding.DtsVariableName);
             }
-            _nestedLevel -= 1;
-            Debug.IndentLevel = _nestedLevel;
-            OnRaiseExecuteSqlEvent(new ExecuteSqlEventArgs(taskHost.Name, _nestedLevel, executeSql.SqlStatementSource, parameterNames));
+            NestedLevel -= 1;
+            Debug.IndentLevel = NestedLevel;
+            OnRaiseExecuteSqlEvent(new ExecuteSqlEventArgs(taskHost.Name, NestedLevel, executeSql.SqlStatementSource, parameterNames));
         }
         private void ParseDataFlow(TaskHost taskHost)
         {
             string sourceQuery = null;
             string sourceConnectionManagerID = null;
+            string sourceDatabaseName = null;
             string destinationTableName = null;
             string destinationConnectionManagerID = null;
+            string destinationDatabaseName = null;
             Debug.Print($"Data Flow Task: {taskHost.Name}");
-            _nestedLevel += 1;
-            Debug.IndentLevel = _nestedLevel;
+            NestedLevel += 1;
+            Debug.IndentLevel = NestedLevel;
             // replaced with event handler pattern
             //_md.WriteTitle($"Data Flow Task: {taskHost.Name}");
             MainPipe mainPipe = taskHost.InnerObject as MainPipe;
-            
+
             IDTSComponentMetaDataCollection100 metaDataCollection = mainPipe.ComponentMetaDataCollection;
             // loop over all components (eg. Destination, Source, Derived Column, etc)
             foreach (IDTSComponentMetaData100 componentMetaData in metaDataCollection)
@@ -396,28 +396,32 @@ namespace EtlPackage
                 // try to get connection manager info (need runtime to validate connections... doesn't work unless connections can be resolved)
                 try
                 {
-                    string tempConnectionManagerId = null;
                     Debug.Print($"{nameof(componentMetaData.RuntimeConnectionCollection)}: {componentMetaData.RuntimeConnectionCollection[0].ConnectionManagerID}");
                     IDTSRuntimeConnectionCollection100 runtimeConnectionCollection = componentMetaData.RuntimeConnectionCollection;
                     foreach (IDTSRuntimeConnection100 runtimeConnection in runtimeConnectionCollection)
                     {
-                        tempConnectionManagerId = runtimeConnection.ConnectionManagerID;
                         if (componentMetaDataType == "OLE DB Destination")
                         {
-                            destinationConnectionManagerID = tempConnectionManagerId;
+                            destinationConnectionManagerID = runtimeConnection.ConnectionManagerID;
                             Debug.Print($"DataFlow Destination Connection Manager: {destinationConnectionManagerID}");
                         }
                         else if (componentMetaDataType == "OLE DB Source")
                         {
-                            sourceConnectionManagerID = tempConnectionManagerId;
+                            sourceConnectionManagerID = runtimeConnection.ConnectionManagerID;
                             Debug.Print($"DataFlow Source Connection Manager: {sourceConnectionManagerID}");
                         }
                     }
                 }
                 catch (Exception)
                 {
-                    destinationConnectionManagerID = "Unable to connect.";
-                    sourceConnectionManagerID = "Unable to connect.";
+                    if (destinationConnectionManagerID == null)
+                    {
+                        destinationConnectionManagerID = "Unable to connect.";
+                    }
+                    if (sourceConnectionManagerID == null)
+                    {
+                        sourceConnectionManagerID = "Unable to connect.";
+                    }
                 }
 
                 IDTSCustomPropertyCollection100 customPropertyCollection = componentMetaData.CustomPropertyCollection;
@@ -425,8 +429,8 @@ namespace EtlPackage
                 {
                     if (customPropertyCollection.Count > 0)
                     {
-                        _nestedLevel += 1;
-                        Debug.IndentLevel = _nestedLevel;
+                        NestedLevel += 1;
+                        Debug.IndentLevel = NestedLevel;
                         foreach (IDTSCustomProperty100 customProperty in customPropertyCollection)
                         {
                             string valueStr = customProperty.Value as string;
@@ -435,19 +439,20 @@ namespace EtlPackage
                                 Debug.Print($"{nameof(customProperty.Name)}: {customProperty.Name}");
                                 Debug.Print($"{nameof(customProperty.Value)}: {customProperty.Value}");
                                 destinationTableName = valueStr;
+                                destinationDatabaseName = "[" + SqlUtilities.ExtractDatabaseName(_package.Connections[destinationConnectionManagerID].ConnectionString) + "]";
                                 //_md.WriteDataFlowDestinationTable(destinationTableName);
                             }
                         }
-                        _nestedLevel -= 1;
-                        Debug.IndentLevel = _nestedLevel;
+                        NestedLevel -= 1;
+                        Debug.IndentLevel = NestedLevel;
                     }
                 }
                 else if (componentMetaDataType == "OLE DB Source")
                 {
                     if (customPropertyCollection.Count > 0)
                     {
-                        _nestedLevel += 1;
-                        Debug.IndentLevel = _nestedLevel;
+                        NestedLevel += 1;
+                        Debug.IndentLevel = NestedLevel;
                         foreach (IDTSCustomProperty100 customProperty in customPropertyCollection)
                         {
                             string valueStr = customProperty.Value as string;
@@ -456,15 +461,16 @@ namespace EtlPackage
                                 Debug.Print($"{nameof(customProperty.Name)}: {customProperty.Name}");
                                 Debug.Print($"{nameof(customProperty.Value)}: {customProperty.Value}");
                                 sourceQuery = valueStr;
+                                sourceDatabaseName = "[" + SqlUtilities.ExtractDatabaseName(_package.Connections[sourceConnectionManagerID].ConnectionString) + "]";
                                 //_md.WriteCode(sourceQuery);
                             }
                         }
-                        _nestedLevel -= 1;
-                        Debug.IndentLevel = _nestedLevel;
+                        NestedLevel -= 1;
+                        Debug.IndentLevel = NestedLevel;
                     }
                 }
             }
-            OnRaiseDataFlowEvent(new DataFlowEventArgs(taskHost.Name, null, sourceQuery, null, destinationTableName, _nestedLevel));
+            OnRaiseDataFlowEvent(new DataFlowEventArgs(taskHost.Name, sourceDatabaseName, sourceQuery, destinationDatabaseName, destinationTableName, NestedLevel));
             if (sourceQuery == null)
             {
                 Debug.Print($"sourceQuery not found");
@@ -482,8 +488,8 @@ namespace EtlPackage
                     sourceQuery;
             }
             sourceQuery.ToFile($"{Path.Combine(Utilities.Cwd(), destinationTableName + ".sql")}");
-            _nestedLevel -= 1;
-            Debug.IndentLevel = _nestedLevel;
+            NestedLevel -= 1;
+            Debug.IndentLevel = NestedLevel;
         }
     }
 }
