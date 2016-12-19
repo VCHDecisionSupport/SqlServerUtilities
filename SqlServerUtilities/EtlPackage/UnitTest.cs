@@ -6,6 +6,8 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Microsoft.SqlServer.Management.Smo;
+using Microsoft.SqlServer.Dts.Runtime;
+using System.Collections.Generic;
 
 namespace EtlPackage
 {
@@ -19,7 +21,6 @@ namespace EtlPackage
             etlPackageBuilder.AddOleDbConnectionManager(new Database(new Server("STDBDECSUP01"), "CommunityMart"));
             etlPackageBuilder.AddOleDbConnectionManager(new Database(new Server("STDBDECSUP01"), "CommunityMart"));
         }
-
         public static void test_EtlPackageReader_FileSystem()
         {
             EtlPackageReader etlPackageReader =
@@ -34,7 +35,72 @@ namespace EtlPackage
             EtlPackageReader etlPackageReader = new EtlPackageReader("STDBDECSUP01", @"MSDB\Community\PopulateCommunityMart\PopulateCommunityMart");
             etlPackageReader.ProcessPackage();
         }
-        public static void test_EtlPackageReaderFolder()
+        public static void test_crawl_msdb()
+        {
+           string x = @"
+
+USE msdb
+GO
+
+IF OBJECT_ID('dbo.vwPackagePathes') IS NOT NULL
+BEGIN
+	DROP VIEW dbo.vwPackagePathes;
+END
+GO
+
+CREATE VIEW dbo.vwPackagePathes
+AS
+WITH msdb_folders AS
+(
+	SELECT rootpkg.parentfolderid, 
+		rootpkg.folderid, 
+		rootpkg.foldername, 
+		0 AS level, 
+		CAST('' AS varchar(500)) as full_path 
+	FROM msdb.dbo.sysssispackagefolders AS rootpkg 
+	WHERE parentfolderid IS NULL
+	UNION ALL
+	SELECT 
+		childpkg.parentfolderid, 
+		childpkg.folderid, 
+		childpkg.foldername, 
+		recurse.level + 1 as level, 
+		CAST(recurse.full_path + '\' + childpkg.foldername AS varchar(500)) AS full_path 
+	FROM msdb.dbo.sysssispackagefolders AS childpkg 
+	JOIN msdb_folders as recurse
+	ON childpkg.ParentFolderID = recurse.folderid
+	WHERE childpkg.parentfolderid IS NOT NULL
+)
+SELECT 
+	msdb_folders.full_path AS PackageFolderPath
+	,msdb_folders.full_path + '\' + pkgs.name AS PackageFullPath
+FROM msdb_folders
+JOIN msdb.dbo.sysssispackages as pkgs
+ON msdb_folders.folderid = pkgs.folderid
+GO
+";
+            Application app = new Application();
+            PackageInfos pkgs = app.GetPackageInfos("\\", "STDBDECSUP01", null, null);
+            foreach (var pkg in pkgs)
+            {
+                Debug.WriteLine($"{pkg.Name} in {pkg.Folder}");
+            }
+            SqlConnection sqlconn = SqlUtilities.GetSqlConnection("STDBDECSUP01");
+            SqlCommand cmd = sqlconn.CreateCommand();
+            cmd.CommandText = $"SELECT PackageFullPath FROM msdb.dbo.vwPackagePathes;";
+            SqlDataReader rdr = cmd.ExecuteReader();
+            List<string> etlPackagePaths = new List<string>();
+            foreach (IDataRecord item in rdr)
+            {
+                Debug.WriteLine(item.GetValue(0));
+                etlPackagePaths.Add(item.GetValue(0) as string);
+            }
+            foreach (string pkgPath in etlPackagePaths)
+            {
+                // EtlPackageReader etlPackageReader = new EtlPackageReader("STDBDECSUP01", string.Format(@"MSDB\{0}", pkgPath));
+            }
+        }
+        public static void test_EtlPackageReaderFolder_MarkDown()
         {
             string currentWorkingDirectory = Utilities.Cwd();
             
@@ -54,13 +120,12 @@ namespace EtlPackage
                 etlPackageReader.ProcessPackage();
             }
         }
-
         public static void HandleCommandLineArgs(string[] args)
         {
             if (args.Length == 0)
             {
                 System.Console.WriteLine("Parsing Etl Packages in current working directory...");
-                test_EtlPackageReaderFolder();
+                //test_EtlPackageReaderFolder();
             }
             else if (args.Length != 1 ||
                      !String.Equals(args[0], "-IncludeSubFolders", StringComparison.CurrentCultureIgnoreCase))
@@ -74,7 +139,6 @@ namespace EtlPackage
                 //test_EtlPackageReaderRecursive();
             }
         }
-
         public static void tables_to_views()
         {
             string sharePointServerName = "SPDBSSPS008";
@@ -99,7 +163,6 @@ namespace EtlPackage
                 //sqlCommand.ExecuteNonQuery();
             }
         }
-
         public static void test_Connectivity()
         {
             string[] serverNames = { "SPDBDECSUP04", "STDBDECSUP03", "STDBDECSUP02", "STDBDECSUP01" };
@@ -180,6 +243,26 @@ namespace EtlPackage
         public static void test_RepoCrawl()
         {
             Utilities.CrawlRepos();
+        }
+        public static void test_EtlPackageReaderFolder_SqlInserter()
+        {
+            string currentWorkingDirectory = Utilities.Cwd();
+
+            var etlPackagePaths = Directory.EnumerateFiles(currentWorkingDirectory, "*.dtsx").ToList();
+            if (etlPackagePaths.Count == 0)
+            {
+                Console.WriteLine($"No *.dtsx files found in directory: {currentWorkingDirectory}");
+            }
+            MarkDownWriter md = new MarkDownWriter($"{currentWorkingDirectory}/readme.md");
+            foreach (string etlPackagePath in etlPackagePaths)
+            {
+
+                EtlPackageReader etlPackageReader = new EtlPackageReader(etlPackagePath);
+                PackageTableSqlInserter tab_pkg_map = new PackageTableSqlInserter(SqlUtilities.GetSqlConnection("STDBDECSUP01"), etlPackageReader);
+                md.SetEtlPackageReader(etlPackageReader);
+                etlPackageReader.ReadConnectionManagers();
+                etlPackageReader.ProcessPackage();
+            }
         }
     }
 }

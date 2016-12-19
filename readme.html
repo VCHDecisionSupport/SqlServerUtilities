@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<div id="TOC">
+<ul>
+<li><a href="#etlpackage">ETLPackage</a><ul>
+<li><a href="#namespaces-used">Namespaces used:</a></li>
+<li><a href="#classes">Classes:</a><ul>
+<li><a href="#etlpackagereader"><code>EtlPackageReader</code></a></li>
+<li><a href="#etlpackagebuilder"><code>EtlPackageBuilder</code></a></li>
+</ul></li>
+<li><a href="#nuget-dependancies">NuGet dependancies:</a></li>
+</ul></li>
+</ul>
+</div>
+<h1 id="etlpackage">ETLPackage</h1>
+<p>Reads, writes, and creates SSIS packages to and from a filesystem or a Sql server MSDB.</p>
+<h2 id="namespaces-used">Namespaces used:</h2>
+<ul>
+<li><code>Microsoft.SqlServer.Dts</code> SSIS object model</li>
+<li><code>Microsoft.SqlServer.Management.Smo</code> SQL Server management objects provides a <strong>object relational mapper</strong> for C#</li>
+</ul>
+<h2 id="classes">Classes:</h2>
+<h3 id="etlpackagereader"><code>EtlPackageReader</code></h3>
+<ul>
+<li>reads *.dtsx files and MSDB</li>
+<li>acts a event provider for listeners that consume SSIS executables</li>
+</ul>
+<h4 id="packagetablesqlinserter"><code>PackageTableSqlInserter</code></h4>
+<ul>
+<li>listens to <code>EtlPackageReader</code> and inserts into <code>Map.PackageTable</code> used by <a href="https://github.com/VCHDecisionSupport/AutoTest"><code>AutoTest</code></a> repo</li>
+</ul>
+<h4 id="markdownwriter"><code>MarkDownWriter</code></h4>
+<ul>
+<li>listens to <code>EtlPackageReader</code> and writes Markdown documentation</li>
+</ul>
+<h3 id="etlpackagebuilder"><code>EtlPackageBuilder</code></h3>
+<p>provides C# API to create SSIS packages programmically.</p>
+<h2 id="nuget-dependancies">NuGet dependancies:</h2>
+<ul>
+<li><a href="http://stackoverflow.com/questions/189549/embedding-dlls-in-a-compiled-executable">Costura.Fody</a> (to embed required dll in exe)</li>
+<li><a href="https://commandline.codeplex.com/">CommandLineLibrary</a> (for CLI)</li>
+</ul>
+</body>
+</html>
