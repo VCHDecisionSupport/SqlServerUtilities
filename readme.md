@@ -3,11 +3,22 @@
 Reads, writes, and creates SSIS packages to and from a filesystem or a Sql server MSDB.
 
 ## Command Line Interface
+(created using [docopt.net](https://github.com/docopt/docopt.net))
 
-__Usage__ `SqlServerUtilities`
-Package Source: `local`, `msdb`
+    SqlServerUtilities.
 
-Server Name: <name>
+        Usage:
+          SqlServerUtilities.exe [--markdown=<markdown_filename>] [--packagepath=<packagepath>] [-server=<server_name>] (--msdb|--local)
+          SqlServerUtilities.exe [--map] [--packagepath=<packagepath>] [--server=<server_name>] (--msdb|--local)
+
+        Options:
+          -h --help                        Show this screen.
+          --markdown=<markdown_filename>   readme markdown full path filename [default: readme]
+          --map                            indicates Map.PackageTable table will be populated from package dataflow destination tables.
+          --msdb                           indicates package is deployed to SSIS MSDB folder.  (packagepath specifies MSDB path)
+          --local                          indicates package exists on file system.  (packagepath specifies file system path)
+          --packagepath=<packagepath>      path of package or folder containing package(s).  can be local file system path or SSIS MSDB path.
+          --server=<server_name>           name of SQL server instance.
 
 ## Namespaces used:
 - `Microsoft.SqlServer.Dts` SSIS object model
