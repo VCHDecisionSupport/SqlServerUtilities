@@ -37,16 +37,7 @@ namespace EtlPackage
         }
         public static void test_crawl_msdb()
         {
-           string x = @"
-
-USE msdb
-GO
-
-IF OBJECT_ID('dbo.vwPackagePathes') IS NOT NULL
-BEGIN
-	DROP VIEW dbo.vwPackagePathes;
-END
-GO
+           string ssis_package_query = @"
 
 CREATE VIEW dbo.vwPackagePathes
 AS
@@ -87,7 +78,7 @@ GO
             }
             SqlConnection sqlconn = SqlUtilities.GetSqlConnection("STDBDECSUP01");
             SqlCommand cmd = sqlconn.CreateCommand();
-            cmd.CommandText = $"SELECT PackageFullPath FROM msdb.dbo.vwPackagePathes;";
+            cmd.CommandText = ssis_package_query;
             SqlDataReader rdr = cmd.ExecuteReader();
             List<string> etlPackagePaths = new List<string>();
             foreach (IDataRecord item in rdr)

@@ -130,13 +130,22 @@ namespace EtlPackage
         }
         public static SqlConnection GetSqlConnection(string server)
         {
-            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
-            builder.DataSource = server;
-            builder.IntegratedSecurity = true;
-            SqlConnection sqlConnection = new SqlConnection(builder.ConnectionString);
-            sqlConnection.Open();
-            ServerConnection serverConnection = new ServerConnection(sqlConnection);
-            return sqlConnection;
+            try
+            {
+                SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
+                builder.DataSource = server;
+                builder.IntegratedSecurity = true;
+                SqlConnection sqlConnection = new SqlConnection(builder.ConnectionString);
+                sqlConnection.Open();
+                ServerConnection serverConnection = new ServerConnection(sqlConnection);
+                return sqlConnection;
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine($"ERROR: unable to connection server: {server}");
+                Environment.Exit(0);
+                return null;
+            }
         }
         public static Server GetServer(string serverName)
         {
