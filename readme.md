@@ -2,6 +2,13 @@
 
 Reads, writes, and creates SSIS packages to and from a filesystem or a Sql server MSDB.
 
+## Command Line Interface
+
+__Usage__ `SqlServerUtilities`
+Package Source: `local`, `msdb`
+
+Server Name: <name>
+
 ## Namespaces used:
 - `Microsoft.SqlServer.Dts` SSIS object model
 - `Microsoft.SqlServer.Management.Smo` SQL Server management objects provides a __object relational mapper__ for C# 
@@ -24,4 +31,4 @@ provides C# API to create SSIS packages programmically.
 ## NuGet dependancies: 
 
 - [Costura.Fody](http://stackoverflow.com/questions/189549/embedding-dlls-in-a-compiled-executable) (to embed required dll in exe)
-- [CommandLineLibrary](https://commandline.codeplex.com/) (for CLI)
+- [docopt.net](https://github.com/docopt/docopt.net) (for CLI)
