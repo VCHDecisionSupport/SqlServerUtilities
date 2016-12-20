@@ -8,20 +8,32 @@ using System.Threading.Tasks;
 
 namespace EtlPackage
 {
-	class PackageTableSqlInserter
+	public class PackageTableSqlInserter
 	{
 		public int NestedLevel { get; set; }
-		public string PackageName { get; }
+		public string PackageName { get; private set; }
 		private SqlConnection destSqlConnection { get; set; }
-		public PackageTableSqlInserter(SqlConnection destSqlConnection, EtlPackageReader etlPackageReader)
-		{
-			NestedLevel = 1;
-			etlPackageReader.RaiseDataFlowEvent += HandleDataFlowEvent;
+        public PackageTableSqlInserter(SqlConnection destSqlConnection, EtlPackageReader etlPackageReader)
+        {
+            NestedLevel = 1;
+            etlPackageReader.RaiseDataFlowEvent += HandleDataFlowEvent;
             this.destSqlConnection = destSqlConnection;
-			this.PackageName = etlPackageReader.PackageName;
-		}
-		// Define what actions to take when the event is raised.
-		void HandleDataFlowEvent(object sender, DataFlowEventArgs dataFlowEventArgs)
+            this.PackageName = etlPackageReader.PackageName;
+        }
+        public PackageTableSqlInserter(SqlConnection destSqlConnection)
+        {
+            NestedLevel = 1;
+            //etlPackageReader.RaiseDataFlowEvent += HandleDataFlowEvent;
+            this.destSqlConnection = destSqlConnection;
+            //this.PackageName = etlPackageReader.PackageName;
+        }
+        public void SetEtlPackageReader(EtlPackageReader etlPackageReader)
+        {
+            etlPackageReader.RaiseDataFlowEvent += HandleDataFlowEvent;
+            this.PackageName = etlPackageReader.PackageName;
+        }
+        // Define what actions to take when the event is raised.
+        void HandleDataFlowEvent(object sender, DataFlowEventArgs dataFlowEventArgs)
 		{
             SqlCommand SqlCmd = destSqlConnection.CreateCommand();
             SqlParameter parameterPackageName = new SqlParameter("@packageName", SqlDbType.VarChar);

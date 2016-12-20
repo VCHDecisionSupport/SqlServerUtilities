@@ -9,7 +9,9 @@
 //using DocoptNet;
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 
 namespace EtlPackage
 {
@@ -161,27 +163,67 @@ namespace EtlPackage
     //}
     public class Program
     {
-
-        public static void DoStuff(string arg, bool flagO, string longValue)
+        public static void ProcessPackageMsdbPaths(string serverName, Dictionary<string, string> pathDictionary, PackageTableSqlInserter inserter, MarkDownWriter md)
         {
-            // ...
+            foreach (var path in pathDictionary)
+            {
+                EtlPackageReader rdr = new EtlPackageReader(serverName, path.Value);
+                if (inserter != null)
+                {
+                    inserter.SetEtlPackageReader(rdr);
+                }
+                if (md != null)
+                {
+                    md.SetEtlPackageReader(rdr);
+                }
+                rdr.ProcessPackage();
+            }
         }
-
+        public static void ProcessPackageFilePaths(Dictionary<string, string> pathDictionary, PackageTableSqlInserter inserter, MarkDownWriter md)
+        {
+            foreach (var path in pathDictionary)
+            {
+                EtlPackageReader rdr = new EtlPackageReader(path.Value);
+                if (inserter != null)
+                {
+                    inserter.SetEtlPackageReader(rdr);
+                }
+                if (md != null)
+                {
+                    md.SetEtlPackageReader(rdr);
+                }
+                rdr.ProcessPackage();
+            }
+        }
         public static void Main(string[] argv)
         {
             TextWriterTraceListener debugWriter = new TextWriterTraceListener(System.Console.Out);
             Debug.Listeners.Add(debugWriter);
             // Automatically exit(1) if invalid arguments
             var args = new MainArgs(argv, exit: true);
-            Debug.WriteLine(args);
+            Dictionary<string, string> pathDictionary;
+            PackageTableSqlInserter inserter = null;
+            if (args.OptMap && args.OptServer != null)
+            {
+                inserter = new PackageTableSqlInserter(SqlUtilities.GetSqlConnection(args.OptServer));
+            }
+            MarkDownWriter md = null;
+            if (args.OptMarkdown != null)
+            {
+                md = new MarkDownWriter(args.OptMarkdown);
+            }
             if (args.OptLocal)
             {
-                Console.WriteLine("First command");
-                //DoStuff(args.OptMarkdown, args.OptO, args.OptLong);
+                Debug.WriteLine("OptLocal");
+                pathDictionary = SqlUtilities.GetPackageFilePaths(args.OptPackagepath);
+                ProcessPackageFilePaths(pathDictionary, inserter, md);
             }
-
-            //Console.WriteLine($"\n\nexecution complete.  press any key to exit.");
-            //Console.ReadKey();
+            else if(args.OptMsdb)
+            {
+                Debug.WriteLine("OptMsdb");
+                pathDictionary = SqlUtilities.GetPackageMsdbPaths(args.OptServer, args.OptPackagepath);
+                ProcessPackageMsdbPaths(args.OptServer, pathDictionary, inserter, md);
+            }
         }
     }
 }

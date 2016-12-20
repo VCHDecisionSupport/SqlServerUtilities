@@ -1,13 +1,15 @@
 ﻿SqlServerUtilities.
 
     Usage:
-      SqlServerUtilities.exe [--map|--markdown=<markdown_filename>] [--packagepath=<packagepath>] [--server=<server_name>] (--msdb|--local)
+      SqlServerUtilities.exe (--markdown=<markdown_filename>)
+      SqlServerUtilities.exe --local [--packagepath=<packagepath>] [--map|--markdown=<markdown_filename>] [--server=<server_name>]
+      SqlServerUtilities.exe (--msdb) [--packagepath=<packagepath>] [--map|--markdown=<markdown_filename>] (--server=<server_name>)
 
     Options:
       -h --help                        Show this screen.
-      --markdown=<markdown_filename>   readme markdown full path filename [default: readme]
+      --markdown=markdown_filename     readme markdown full path filename [default: readme.md]
       --map                            indicates Map.PackageTable table will be populated from package dataflow destination tables.
       --msdb                           indicates package is deployed to SSIS MSDB folder.  (packagepath specifies MSDB path)
       --local                          indicates package exists on file system.  (packagepath specifies file system path)
-      --packagepath=<packagepath>      path of package or folder containing package(s).  can be local file system path or SSIS MSDB path.
-      -server=<server_name>            this is the server.
+      --packagepath=packagepath        path of package or folder containing package(s).  can be local file system path or SSIS MSDB path.
+      --server=server_name             this is the server.

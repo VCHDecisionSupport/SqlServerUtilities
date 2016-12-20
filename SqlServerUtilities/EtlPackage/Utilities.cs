@@ -33,14 +33,6 @@ namespace EtlPackage
             Debug.WriteLine($"repo path crawl complete({pkg_dir_path})");
 
         }
-        public static void StartUp()
-        {
-
-        }
-        public static void ShutDown()
-        {
-
-        }
         public static String Cwd()
         {
             string path = Directory.GetCurrentDirectory();

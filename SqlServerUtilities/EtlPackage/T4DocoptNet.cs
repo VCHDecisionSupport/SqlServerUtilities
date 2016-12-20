@@ -32,17 +32,19 @@ namespace EtlPackage
     {
         public const string USAGE = @"SqlServerUtilities.
 
-	Usage:
-	  SqlServerUtilities.exe [--map|--markdown=<markdown_filename>] [--packagepath=<packagepath>] [--server=<server_name>] (--msdb|--local)
+    Usage:
+      SqlServerUtilities.exe (--markdown=<markdown_filename>)
+      SqlServerUtilities.exe --local [--packagepath=<packagepath>] [--map|--markdown=<markdown_filename>] [--server=<server_name>]
+      SqlServerUtilities.exe (--msdb) [--packagepath=<packagepath>] [--map|--markdown=<markdown_filename>] (--server=<server_name>)
 
-	Options:
-	  -h --help                        Show this screen.
-	  --markdown=<markdown_filename>   readme markdown full path filename [default: readme]
-	  --map                            indicates Map.PackageTable table will be populated from package dataflow destination tables.
-	  --msdb                           indicates package is deployed to SSIS MSDB folder.  (packagepath specifies MSDB path)
-	  --local                          indicates package exists on file system.  (packagepath specifies file system path)
-	  --packagepath=<packagepath>      path of package or folder containing package(s).  can be local file system path or SSIS MSDB path.
-	  -server=<server_name>            this is the server.
+    Options:
+      -h --help                        Show this screen.
+      --markdown=markdown_filename     readme markdown full path filename [default: readme.md]
+      --map                            indicates Map.PackageTable table will be populated from package dataflow destination tables.
+      --msdb                           indicates package is deployed to SSIS MSDB folder.  (packagepath specifies MSDB path)
+      --local                          indicates package exists on file system.  (packagepath specifies file system path)
+      --packagepath=packagepath        path of package or folder containing package(s).  can be local file system path or SSIS MSDB path.
+      --server=server_name             this is the server.
 ";
         private readonly IDictionary<string, ValueObject> _args;
         public MainArgs(ICollection<string> argv, bool help = true,
@@ -56,12 +58,12 @@ namespace EtlPackage
             get { return _args; }
         }
 
-        public bool OptMap { get { return _args["--map"].IsTrue; } }
         public string OptMarkdown { get { return null == _args["--markdown"] ? null : _args["--markdown"].ToString(); } }
+        public bool OptLocal { get { return _args["--local"].IsTrue; } }
         public string OptPackagepath { get { return null == _args["--packagepath"] ? null : _args["--packagepath"].ToString(); } }
+        public bool OptMap { get { return _args["--map"].IsTrue; } }
         public string OptServer { get { return null == _args["--server"] ? null : _args["--server"].ToString(); } }
         public bool OptMsdb { get { return _args["--msdb"].IsTrue; } }
-        public bool OptLocal { get { return _args["--local"].IsTrue; } }
 
     }
 

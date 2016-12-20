@@ -65,6 +65,7 @@ WITH msdb_folders AS
 SELECT 
 	msdb_folders.full_path AS PackageFolderPath
 	,msdb_folders.full_path + '\' + pkgs.name AS PackageFullPath
+    ,pkgs.name AS PackageName
 FROM msdb_folders
 JOIN msdb.dbo.sysssispackages as pkgs
 ON msdb_folders.folderid = pkgs.folderid
