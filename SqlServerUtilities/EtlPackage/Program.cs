@@ -15,7 +15,11 @@ using System.IO;
 
 namespace EtlPackage
 {
-
+    //using PackageName = String;
+    //using PackageFullPath = String;
+    ////using PackagePathPair = Tuple<PackageFullPath, PackageName>;
+    //using PackagePathPair = Tuple<String, String>;
+    using MsdbPackagePaths = List<Tuple<String, String>>;
     //    internal class Program
     //    {
     //        //public static void CliUsage()
@@ -163,11 +167,46 @@ namespace EtlPackage
     //}
     public class Program
     {
-        public static void ProcessPackageMsdbPaths(string serverName, Dictionary<string, string> pathDictionary, PackageTableSqlInserter inserter, MarkDownWriter md)
+        public static void ProcessPackageMsdbPaths(string serverName, MsdbPackagePaths packagePaths, PackageTableSqlInserter inserter, MarkDownWriter md)
         {
-            foreach (var path in pathDictionary)
+            foreach (var pathPair in packagePaths)
             {
-                EtlPackageReader rdr = new EtlPackageReader(serverName, path.Value);
+                EtlPackageReader rdr = new EtlPackageReader(serverName, pathPair.Item1);
+                if (rdr.IsValid)
+                {
+                    if (inserter != null)
+                    {
+                        inserter.SetEtlPackageReader(rdr);
+                    }
+                    if (md != null)
+                    {
+                        md.SetEtlPackageReader(rdr);
+                    }
+                    rdr.ProcessPackage();
+                }
+            }
+        }
+        //public static void ProcessPackageFilePaths(Dictionary<string, string> pathDictionary, PackageTableSqlInserter inserter, MarkDownWriter md)
+        //{
+        //    foreach (var path in pathDictionary)
+        //    {
+        //        EtlPackageReader rdr = new EtlPackageReader(path.Value);
+        //        if (inserter != null)
+        //        {
+        //            inserter.SetEtlPackageReader(rdr);
+        //        }
+        //        if (md != null)
+        //        {
+        //            md.SetEtlPackageReader(rdr);
+        //        }
+        //        rdr.ProcessPackage();
+        //    }
+        //}
+        public static void ProcessPackageFilePaths(MsdbPackagePaths packagePaths, PackageTableSqlInserter inserter, MarkDownWriter md)
+        {
+            foreach (var path in packagePaths)
+            {
+                EtlPackageReader rdr = new EtlPackageReader(path.Item2);
                 if (inserter != null)
                 {
                     inserter.SetEtlPackageReader(rdr);
@@ -179,33 +218,18 @@ namespace EtlPackage
                 rdr.ProcessPackage();
             }
         }
-        public static void ProcessPackageFilePaths(Dictionary<string, string> pathDictionary, PackageTableSqlInserter inserter, MarkDownWriter md)
+        public static void CommandLineInterface(string[] argv)
         {
-            foreach (var path in pathDictionary)
-            {
-                EtlPackageReader rdr = new EtlPackageReader(path.Value);
-                if (inserter != null)
-                {
-                    inserter.SetEtlPackageReader(rdr);
-                }
-                if (md != null)
-                {
-                    md.SetEtlPackageReader(rdr);
-                }
-                rdr.ProcessPackage();
-            }
-        }
-        public static void Main(string[] argv)
-        {
-            TextWriterTraceListener debugWriter = new TextWriterTraceListener(System.Console.Out);
-            Debug.Listeners.Add(debugWriter);
             // Automatically exit(1) if invalid arguments
             var args = new MainArgs(argv, exit: true);
-            Dictionary<string, string> pathDictionary;
+
+            MsdbPackagePaths msdbPackagePaths;
             PackageTableSqlInserter inserter = null;
-            if (args.OptMap && args.OptServer != null)
+            if (args.OptMap != null && args.OptServer != null)
             {
                 inserter = new PackageTableSqlInserter(SqlUtilities.GetSqlConnection(args.OptServer));
+                Debug.WriteLine($"{nameof(args.OptMap)} = {args.OptMap}");
+                inserter.DestinationMappingTableFqName = args.OptMap;
             }
             MarkDownWriter md = null;
             if (args.OptMarkdown != null)
@@ -215,15 +239,46 @@ namespace EtlPackage
             if (args.OptLocal)
             {
                 Debug.WriteLine("OptLocal");
-                pathDictionary = SqlUtilities.GetPackageFilePaths(args.OptPackagepath);
-                ProcessPackageFilePaths(pathDictionary, inserter, md);
+                msdbPackagePaths = SqlUtilities.GetPackageFilePaths(args.OptPackagepath);
+                ProcessPackageFilePaths(msdbPackagePaths, inserter, md);
             }
-            else if(args.OptMsdb)
+            else if (args.OptMsdb)
             {
                 Debug.WriteLine("OptMsdb");
-                pathDictionary = SqlUtilities.GetPackageMsdbPaths(args.OptServer, args.OptPackagepath);
-                ProcessPackageMsdbPaths(args.OptServer, pathDictionary, inserter, md);
+                msdbPackagePaths = SqlUtilities.GetPackageMsdbPaths(args.OptServer, args.OptPackagepath);
+                foreach (var item in msdbPackagePaths)
+                {
+                    Debug.WriteLine($"{nameof(item.Item1)} = {item.Item1}, {nameof(item.Item2)} = {item.Item2}");
+                }
+                ProcessPackageMsdbPaths(args.OptServer, msdbPackagePaths, inserter, md);
             }
+        }
+        public static void DocumentWorkingDirectoryPackages()
+        {
+            MarkDownWriter md = new MarkDownWriter(Utilities.Cwd()+"\\readme.md");
+            PackageTableSqlInserter inserter = null;
+            MsdbPackagePaths packagePaths;
+            packagePaths = SqlUtilities.GetPackageFilePaths(Utilities.Cwd());
+            ProcessPackageFilePaths(packagePaths, inserter, md);
+        }
+
+        public static void MapLocalMsdbPackages()
+        {
+            MarkDownWriter md = null;
+            PackageTableSqlInserter inserter = new PackageTableSqlInserter(SqlUtilities.GetSqlConnection(Environment.MachineName));
+            MsdbPackagePaths packagePaths = SqlUtilities.GetPackageMsdbPaths(Environment.MachineName, "");
+            ProcessPackageFilePaths(packagePaths, inserter, md);
+        }
+        public static void Main(string[] argv)
+        {
+            TextWriterTraceListener debugWriter = new TextWriterTraceListener(System.Console.Out);
+            Debug.Listeners.Add(debugWriter);
+
+            DocumentWorkingDirectoryPackages();
+            MapLocalMsdbPackages();
+
+            Console.WriteLine($"\n\nexecution complete.  press any key to exit.");
+            Console.ReadKey();
         }
     }
 }

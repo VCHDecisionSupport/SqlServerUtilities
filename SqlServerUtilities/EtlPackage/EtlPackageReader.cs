@@ -81,6 +81,7 @@ namespace EtlPackage
     {
         private Application _application;
         private Package _package;
+        public bool IsValid { get; set; } = true;
         public string PackageName
         {
             get
@@ -203,20 +204,24 @@ namespace EtlPackage
             Console.WriteLine($"EtlPackageReader({SsisServerName}, {ssisEtlPath})...");
             _application = new Application();
             IDTSEvents idtsEvents = new DefaultEvents();
-            if (_application.ExistsOnDtsServer(ssisEtlPath, SsisServerName))
+            bool packageExists;
+            try
             {
-                Debug.WriteLine($"package file found on Ssis Server (Dts)\nloading...");
+                //packageExists = _application.ExistsOnDtsServer(ssisEtlPath, SsisServerName);
                 _package = _application.LoadFromDtsServer(ssisEtlPath, SsisServerName, idtsEvents);
-                //_md = new MarkDownWriter(ssisEtlPath.Split('\\').Last().Split('/').Last().Replace("\\", "").Replace("/", "") + ".md");
-                //OnRaisePackageEvent(new PackageEventArgs(ssisEtlPath.Split('\\').Last().Split('/').Last().Replace("\\", "").Replace("/", "")));
-
             }
-            else
+            catch (Exception e)
             {
+                _package = null;
+                Debug.WriteLine(e.Message);
                 Debug.WriteLine($"ERROR package ({ssisEtlPath}) NOT found on Dts Server: {SsisServerName}\nloading...");
-                throw new Exception($"EtlPackageReader({ssisEtlPath} on {SsisServerName}) not found");
+                //throw new Exception($"EtlPackageReader({ssisEtlPath} on {SsisServerName}) not found");
+                IsValid = false;
             }
-            Console.WriteLine($"Package {_package.Name} loaded.");
+            if (_package != null)
+            {   
+                Console.WriteLine($"Package: {_package.Name} loaded.");
+            }
         }
         public void ReadConnectionManagers()
         {
@@ -487,7 +492,7 @@ namespace EtlPackage
                     $"-- Source: {sourceConnectionManagerID}\n-- Destination: {destinationConnectionManagerID}\n\n" +
                     sourceQuery;
             }
-            sourceQuery.ToFile($"{Path.Combine(Utilities.Cwd(), destinationTableName + ".sql")}");
+            
             NestedLevel -= 1;
             Debug.IndentLevel = NestedLevel;
         }

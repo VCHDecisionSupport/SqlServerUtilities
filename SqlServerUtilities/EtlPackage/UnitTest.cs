@@ -37,65 +37,19 @@ namespace EtlPackage
         }
         public static void test_crawl_msdb()
         {
-           string ssis_package_query = @"
-
-CREATE VIEW dbo.vwPackagePathes
-AS
-WITH msdb_folders AS
-(
-	SELECT rootpkg.parentfolderid, 
-		rootpkg.folderid, 
-		rootpkg.foldername, 
-		0 AS level, 
-		CAST('' AS varchar(500)) as full_path 
-	FROM msdb.dbo.sysssispackagefolders AS rootpkg 
-	WHERE parentfolderid IS NULL
-	UNION ALL
-	SELECT 
-		childpkg.parentfolderid, 
-		childpkg.folderid, 
-		childpkg.foldername, 
-		recurse.level + 1 as level, 
-		CAST(recurse.full_path + '\' + childpkg.foldername AS varchar(500)) AS full_path 
-	FROM msdb.dbo.sysssispackagefolders AS childpkg 
-	JOIN msdb_folders as recurse
-	ON childpkg.ParentFolderID = recurse.folderid
-	WHERE childpkg.parentfolderid IS NOT NULL
-)
-SELECT 
-	msdb_folders.full_path AS PackageFolderPath
-	,msdb_folders.full_path + '\' + pkgs.name AS PackageFullPath
-    ,pkgs.name AS PackageName
-FROM msdb_folders
-JOIN msdb.dbo.sysssispackages as pkgs
-ON msdb_folders.folderid = pkgs.folderid
-GO
-";
-            Application app = new Application();
-            PackageInfos pkgs = app.GetPackageInfos("\\", "STDBDECSUP01", null, null);
-            foreach (var pkg in pkgs)
+            List<Tuple<string, string>> msdbPaths = SqlUtilities.GetPackageMsdbPaths("STDBDECSUP01", null) as List<Tuple<string, string>>;
+            
+            foreach (var pkgPath in msdbPaths)
             {
-                Debug.WriteLine($"{pkg.Name} in {pkg.Folder}");
-            }
-            SqlConnection sqlconn = SqlUtilities.GetSqlConnection("STDBDECSUP01");
-            SqlCommand cmd = sqlconn.CreateCommand();
-            cmd.CommandText = ssis_package_query;
-            SqlDataReader rdr = cmd.ExecuteReader();
-            List<string> etlPackagePaths = new List<string>();
-            foreach (IDataRecord item in rdr)
-            {
-                Debug.WriteLine(item.GetValue(0));
-                etlPackagePaths.Add(item.GetValue(0) as string);
-            }
-            foreach (string pkgPath in etlPackagePaths)
-            {
-                // EtlPackageReader etlPackageReader = new EtlPackageReader("STDBDECSUP01", string.Format(@"MSDB\{0}", pkgPath));
+                Debug.WriteLine(pkgPath);
+                EtlPackageReader etlPackageReader = new EtlPackageReader("STDBDECSUP01", string.Format(@"MSDB\{0}", pkgPath.Item1));
+                break;
             }
         }
         public static void test_EtlPackageReaderFolder_MarkDown()
         {
             string currentWorkingDirectory = Utilities.Cwd();
-            
+
             var etlPackagePaths = Directory.EnumerateFiles(currentWorkingDirectory, "*.dtsx").ToList();
             if (etlPackagePaths.Count == 0)
             {

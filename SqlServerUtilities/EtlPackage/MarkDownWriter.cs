@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -12,6 +13,7 @@ namespace EtlPackage
     public class MarkDownWriter : StreamWriter
     {
         public int NestedLevel { get; set; }
+        public string PackageName { get; set; }
         public MarkDownWriter(string path, EtlPackageReader etlPackageReader) : base(path)
         {
             base.AutoFlush = true;
@@ -23,6 +25,7 @@ namespace EtlPackage
             etlPackageReader.RaiseLoopEvent += HandleLoopEvent;
             etlPackageReader.RaiseSequenceEvent += HandleSequenceEvent;
             etlPackageReader.RaiseChildPackageEvent += HandleChildPackageEvent;
+            this.PackageName = etlPackageReader.PackageName;
         }
         public MarkDownWriter(string path) : base(path)
         {
@@ -38,6 +41,8 @@ namespace EtlPackage
             etlPackageReader.RaiseLoopEvent += HandleLoopEvent;
             etlPackageReader.RaiseSequenceEvent += HandleSequenceEvent;
             etlPackageReader.RaiseChildPackageEvent += HandleChildPackageEvent;
+            this.PackageName = etlPackageReader.PackageName;
+
         }
         // Define what actions to take when the event is raised.
         void HandleDataFlowEvent(object sender, DataFlowEventArgs dataFlowEventArgs)
@@ -46,6 +51,7 @@ namespace EtlPackage
             string dataFlowMarkDown = $"__DataFlow: {dataFlowEventArgs.ExecutableName}__\n\t_Destination Table: {dataFlowEventArgs.DestinationTableName}_\n\n";
             this.Write(dataFlowMarkDown);
             this.WriteCode(dataFlowEventArgs.SourceQuery);
+            this.WriteDataFlowSourceQueryToFile(dataFlowEventArgs);
         }
         void HandlePackageEvent(object sender, PackageEventArgs packageEventArgs)
         {
@@ -100,6 +106,16 @@ namespace EtlPackage
         internal void WriteDataFlowDestinationTable(string destinationTableName)
         {
             this.Write($"_Destination Table:_ __`{destinationTableName}`__\n\n");
+        }
+        public void WriteDataFlowSourceQueryToFile(DataFlowEventArgs dataFlowEventArgs)
+        {
+            string directory_path = Path.Combine(Utilities.Cwd(), $"{PackageName}");
+            //Debug.WriteLine($"Saving Data Flow Source Query at: {directory_path}");
+            if (!Directory.Exists(directory_path))
+            {
+                Directory.CreateDirectory(directory_path);
+            }
+            dataFlowEventArgs.SourceQuery.ToFile($"{Path.Combine(directory_path, dataFlowEventArgs.DestinationTableName + ".sql")}");
         }
     }
 }

@@ -13,13 +13,17 @@ using System.Data;
 
 namespace EtlPackage
 {
+    using PackageName = String;
+    using PackageFullPath = String;
+    //using PackagePathPair = Tuple<PackageFullPath, PackageName>;
+    using PackagePathPair = Tuple<String, String>;
+    using MsdbPackagePaths = List<Tuple<String, String>>;
     public static class SqlUtilities
     {
         public static string CleanSsisTaskName(string taskName)
         {
             return Regex.Replace(taskName, @"[\[\]\\\.]", "", RegexOptions.None, TimeSpan.FromSeconds(1.5));
         }
-
         public static string ExtractDatabaseName(string connectionString)
         {
             Regex regex = new Regex(@"Initial Catalog[ ]*=[ ]*(?<databaseName>[\w\..]+);");
@@ -177,7 +181,6 @@ namespace EtlPackage
             }
             return database;
         }
-
         public static Table GetTable(string serverName, string databaseName, string schemaName, string tableName)
         {
             Database database = GetDatabase(serverName, databaseName);
@@ -198,7 +201,6 @@ namespace EtlPackage
             }
             return view;
         }
-
         public static ColumnCollection GetColumns(string serverName, string databaseName, string schemaName, string objectName)
         {
             Database database = GetDatabase(serverName, databaseName);
@@ -221,40 +223,54 @@ namespace EtlPackage
             }
         }
         // recursive search of package files in/under rootPath; add to ref pathDictionary
-        public static void AddPackageFilePaths(string rootPath, ref Dictionary<string, string> pathDictionary)
+        public static void AddPackageFilePaths(string rootPath, ref MsdbPackagePaths pathDictionary)
         {
-            // add packages in rootPath
-            if (Directory.Exists(rootPath) && Directory.GetFiles(rootPath, "*.dtsx").Length > 0)
+            try
             {
-                foreach (var entry in Directory.GetFiles(rootPath, "*.dtsx"))
+                // add packages in rootPath
+                if (Directory.Exists(rootPath))
                 {
-                    pathDictionary.Add(Path.GetFileName(Path.GetFileNameWithoutExtension(entry)), entry);
+                    if (Directory.GetFiles(rootPath, "*.dtsx").Length > 0)
+                    {
+                        foreach (var entry in Directory.GetFiles(rootPath, "*.dtsx"))
+                        {
+                            pathDictionary.Add(new Tuple<String, String>(Path.GetFileName(Path.GetFileNameWithoutExtension(entry)), entry));
+                        }
+                        // recurse into child folders
+                        if (Directory.GetDirectories(rootPath).Length > 0)
+                        {
+                            foreach (var entry in Directory.EnumerateFileSystemEntries(rootPath))
+                            {
+                                AddPackageFilePaths(entry, ref pathDictionary);
+                            }
+                        }
+                    }
                 }
             }
-            // recurse into child folders
-            if (Directory.GetDirectories(rootPath).Length > 0)
+            catch (System.IO.IOException e)
             {
-                foreach (var entry in Directory.EnumerateFileSystemEntries(rootPath))
-                {
-                    AddPackageFilePaths(entry, ref pathDictionary);
-                }
+                Debug.WriteLine($"ERROR: AddPackageFilePaths {nameof(rootPath)} = {rootPath}");
             }
         }
         // recursive search of package files in/under rootPath
-        public static Dictionary<string, string> GetPackageFilePaths(string rootPath)
+        // assumes PackageNames are not repeated in different folders
+        public static MsdbPackagePaths GetPackageFilePaths(string rootPath)
         {
+            Debug.WriteLine($"GetPackageFilePaths({nameof(rootPath)} = {rootPath}");
+
             if (rootPath == null)
             {
                 rootPath = Utilities.Cwd();
             }
-            Dictionary<string, string> pathDictionary = new Dictionary<string, string>();
+            Debug.WriteLine($"GetPackageFilePaths({nameof(rootPath)} = {rootPath}");
+            MsdbPackagePaths msdbPackagePaths = new MsdbPackagePaths();
             // add packages at rootPath
             if (File.Exists(rootPath))
             {
                 if (Path.GetExtension(rootPath) == ".dtsx")
                 {
                     Application app = new Application();
-                    pathDictionary.Add(Path.GetFileNameWithoutExtension(rootPath), rootPath);
+                    msdbPackagePaths.Add(new Tuple<String, String>(Path.GetFileNameWithoutExtension(rootPath) as String, rootPath));
                 }
             }
             // add packages in rootPath
@@ -262,7 +278,7 @@ namespace EtlPackage
             {
                 foreach (var entry in Directory.GetFiles(rootPath, "*.dtsx"))
                 {
-                    pathDictionary.Add(Path.GetFileName(Path.GetFileNameWithoutExtension(entry)), entry);
+                    msdbPackagePaths.Add(new Tuple<String, String>(Path.GetFileName(Path.GetFileNameWithoutExtension(entry)), entry));
                 }
             }
             // recurse into child folders
@@ -270,14 +286,13 @@ namespace EtlPackage
             {
                 foreach (var entry in Directory.EnumerateFileSystemEntries(rootPath))
                 {
-                    AddPackageFilePaths(entry, ref pathDictionary);
+                    AddPackageFilePaths(entry, ref msdbPackagePaths);
                 }
             }
-            return pathDictionary;
+            return msdbPackagePaths;
         }
-
         // recursive search of MSDB for all packages in/under rootPath
-        public static Dictionary<string, string> GetPackageMsdbPaths(string serverName, string rootPath)
+        public static MsdbPackagePaths GetPackageMsdbPaths(string serverName, string rootPath)
         {
             if (rootPath == null)
             {
@@ -291,7 +306,7 @@ WITH msdb_folders AS
 		rootpkg.folderid, 
 		rootpkg.foldername, 
 		0 AS level, 
-		CAST('' AS varchar(500)) as full_path 
+		CAST('MSDB' AS varchar(500)) as full_path 
 	FROM msdb.dbo.sysssispackagefolders AS rootpkg 
 	WHERE parentfolderid IS NULL
 	UNION ALL
@@ -313,7 +328,6 @@ SELECT
 FROM msdb_folders
 JOIN msdb.dbo.sysssispackages as pkgs
 ON msdb_folders.folderid = pkgs.folderid
-GO
 ";
             Application app = new Application();
             PackageInfos pkgs = app.GetPackageInfos("\\", serverName, null, null);
@@ -325,17 +339,21 @@ GO
             SqlCommand cmd = sqlconn.CreateCommand();
             cmd.CommandText = ssis_package_query;
             SqlDataReader rdr = cmd.ExecuteReader();
-            Dictionary<string, string> pathDictionary = new Dictionary<string, string>();
+            MsdbPackagePaths msdbPackagePaths = new MsdbPackagePaths();
             foreach (IDataRecord item in rdr)
             {
+                string msdbFolderPath = item.GetValue(0) as string;
+                PackageName packageName = item.GetValue(2) as PackageName;
+                PackageFullPath packageFullPath = item.GetValue(1) as PackageFullPath;
                 Debug.WriteLine(item.GetValue(1));
-                if ((item.GetValue(0) as string).StartsWith(rootPath))
+                // filter out packages not under given rootPath
+                if ((msdbFolderPath).StartsWith(rootPath))
                 {
-                    pathDictionary.Add(item.GetValue(2) as string, item.GetValue(1) as string);
+                    msdbPackagePaths.Add(new PackagePathPair(packageFullPath, packageName));
                 }
-                
+
             }
-            return pathDictionary;
+            return msdbPackagePaths;
         }
     }
 }
