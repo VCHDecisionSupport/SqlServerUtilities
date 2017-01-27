@@ -218,41 +218,6 @@ namespace EtlPackage
                 rdr.ProcessPackage();
             }
         }
-        public static void CommandLineInterface(string[] argv)
-        {
-            // Automatically exit(1) if invalid arguments
-            var args = new MainArgs(argv, exit: true);
-
-            MsdbPackagePaths msdbPackagePaths;
-            PackageTableSqlInserter inserter = null;
-            if (args.OptMap != null && args.OptServer != null)
-            {
-                inserter = new PackageTableSqlInserter(SqlUtilities.GetSqlConnection(args.OptServer));
-                Debug.WriteLine($"{nameof(args.OptMap)} = {args.OptMap}");
-                inserter.DestinationMappingTableFqName = args.OptMap;
-            }
-            MarkDownWriter md = null;
-            if (args.OptMarkdown != null)
-            {
-                md = new MarkDownWriter(args.OptMarkdown);
-            }
-            if (args.OptLocal)
-            {
-                Debug.WriteLine("OptLocal");
-                msdbPackagePaths = SqlUtilities.GetPackageFilePaths(args.OptPackagepath);
-                ProcessPackageFilePaths(msdbPackagePaths, inserter, md);
-            }
-            else if (args.OptMsdb)
-            {
-                Debug.WriteLine("OptMsdb");
-                msdbPackagePaths = SqlUtilities.GetPackageMsdbPaths(args.OptServer, args.OptPackagepath);
-                foreach (var item in msdbPackagePaths)
-                {
-                    Debug.WriteLine($"{nameof(item.Item1)} = {item.Item1}, {nameof(item.Item2)} = {item.Item2}");
-                }
-                ProcessPackageMsdbPaths(args.OptServer, msdbPackagePaths, inserter, md);
-            }
-        }
         public static void DocumentWorkingDirectoryPackages()
         {
             MarkDownWriter md = new MarkDownWriter(Utilities.Cwd()+"\\readme.md");
