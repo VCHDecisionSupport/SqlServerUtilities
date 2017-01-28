@@ -34,54 +34,42 @@ namespace EtlPackage
         public void SetEtlPackageReader(EtlPackageReader etlPackageReader)
         {
             etlPackageReader.RaiseDataFlowEvent += HandleDataFlowEvent;
+            if (etlPackageReader.PackageName == null)
+            {
+                throw new Exception($"unknown package name");
+            }
             this.PackageName = etlPackageReader.PackageName;
         }
         // Define what actions to take when the event is raised.
         void HandleDataFlowEvent(object sender, DataFlowEventArgs dataFlowEventArgs)
         {
-            SqlCommand SqlCmd = destSqlConnection.CreateCommand();
-            SqlCmd.CommandText = $@"
-;WITH pkg_tab AS (
-        SELECT @packageName AS PackageName
-                ,@databaseName AS DatabaseName
-                ,@schemaName AS SchemaName
-                ,@tableName AS TableName
-)
-MERGE INTO DQMF.Map.PackageTable AS dest
-USING pkg_tab
-ON pkg_tab.PackageName = dest.PackageName
-AND pkg_tab.DatabaseName = dest.DatabaseName
-AND pkg_tab.SchemaName = dest.SchemaName
-AND pkg_tab.TableName = dest.TableName
-WHEN NOT MATCHED THEN
-INSERT (PackageName, DatabaseName, SchemaName, TableName)
-VALUES (pkg_tab.PackageName, pkg_tab.DatabaseName, pkg_tab.SchemaName, pkg_tab.TableName);
-";
+            SqlCommand sqlCmd = destSqlConnection.CreateCommand();
+            sqlCmd.CommandType = CommandType.StoredProcedure;
+            sqlCmd.CommandText = $@"AutoTest.dbo.uspInsMapPackageTable";
             try
             {
                 
-                SqlParameter parameterPackageName = new SqlParameter("@packageName", SqlDbType.VarChar);
-                SqlParameter parameterDatabaseName = new SqlParameter("@databaseName", SqlDbType.VarChar);
-                SqlParameter parameterSchemaName = new SqlParameter("@schemaName", SqlDbType.VarChar);
-                SqlParameter parameterTableName = new SqlParameter("@tableName", SqlDbType.VarChar);
-
+                SqlParameter parameterPackageName = new SqlParameter("@pPackageName", SqlDbType.VarChar);
+                SqlParameter parameterDatabaseName = new SqlParameter("@pDatabaseName", SqlDbType.VarChar);
+                SqlParameter parameterSchemaName = new SqlParameter("@pSchemaName", SqlDbType.VarChar);
+                SqlParameter parameterTableName = new SqlParameter("@pTableName", SqlDbType.VarChar);
+                    
                 parameterPackageName.SqlValue = PackageName;
                 parameterDatabaseName.SqlValue = dataFlowEventArgs.DestinationDatabaseName;
                 parameterSchemaName.SqlValue = dataFlowEventArgs.DestinationTableName.Split('.')[0];
                 parameterTableName.SqlValue = dataFlowEventArgs.DestinationTableName.Split('.')[1];
 
-
-                SqlCmd.Parameters.Add(parameterPackageName);
-                SqlCmd.Parameters.Add(parameterDatabaseName);
-                SqlCmd.Parameters.Add(parameterSchemaName);
-                SqlCmd.Parameters.Add(parameterTableName);
-                SqlCmd.ExecuteNonQuery();
+                sqlCmd.Parameters.Add(parameterPackageName);
+                sqlCmd.Parameters.Add(parameterDatabaseName);
+                sqlCmd.Parameters.Add(parameterSchemaName);
+                sqlCmd.Parameters.Add(parameterTableName);
+                sqlCmd.ExecuteNonQuery();
             }
-            catch (Exception e)
+            catch (SqlException e)
             {
-                Debug.WriteLine($"\n\n\n\n\n\n-----------------------------------------------\n\nunable to insert mapping: {PackageName} -> {dataFlowEventArgs.DestinationTableName} into table: {DestinationMappingTableFqName}\n\n\n\n\n\n{SqlCmd.CommandText}\n\n{SqlCmd.Connection.ConnectionString}\n\n");
+                Debug.WriteLine($"\n\n\n\n\n\n-----------------------------------------------\n\nunable to insert mapping: {PackageName} -> {dataFlowEventArgs.DestinationTableName} into table: {DestinationMappingTableFqName}\n{e.GetType()}\n{sqlCmd.CommandText}\n\n{sqlCmd.Connection.ConnectionString}\n\n");
                 Debug.WriteLine($"{e.Message}");
-
+                throw e;
 
 
             }

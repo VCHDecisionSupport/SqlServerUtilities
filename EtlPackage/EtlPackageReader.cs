@@ -213,6 +213,7 @@ namespace EtlPackage
             catch (Exception e)
             {
                 _package = null;
+                Debug.WriteLine(e.GetType());
                 Debug.WriteLine(e.Message);
                 Debug.WriteLine($"ERROR package ({ssisEtlPath}) NOT found on Dts Server: {SsisServerName}\nloading...");
                 //throw new Exception($"EtlPackageReader({ssisEtlPath} on {SsisServerName}) not found");

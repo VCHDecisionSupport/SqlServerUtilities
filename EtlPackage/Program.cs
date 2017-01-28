@@ -19,7 +19,7 @@ namespace EtlPackage
     //using PackageFullPath = String;
     ////using PackagePathPair = Tuple<PackageFullPath, PackageName>;
     //using PackagePathPair = Tuple<String, String>;
-    using MsdbPackagePaths = List<Tuple<String, String>>;
+    using PackagePathNames = List<Tuple<String, String>>;
     //    internal class Program
     //    {
     //        //public static void CliUsage()
@@ -167,10 +167,11 @@ namespace EtlPackage
     //}
     public class Program
     {
-        public static void ProcessPackageMsdbPaths(string serverName, MsdbPackagePaths packagePaths, PackageTableSqlInserter inserter, MarkDownWriter md)
+        public static void ProcessPackageMsdbPaths(string serverName, PackagePathNames packagePaths, PackageTableSqlInserter inserter, MarkDownWriter md)
         {
             foreach (var pathPair in packagePaths)
             {
+                Debug.WriteLine($"{pathPair.Item2}: {pathPair.Item1}");
                 EtlPackageReader rdr = new EtlPackageReader(serverName, pathPair.Item1);
                 if (rdr.IsValid)
                 {
@@ -202,10 +203,11 @@ namespace EtlPackage
         //        rdr.ProcessPackage();
         //    }
         //}
-        public static void ProcessPackageFilePaths(MsdbPackagePaths packagePaths, PackageTableSqlInserter inserter, MarkDownWriter md)
+        public static void ProcessPackageFilePaths(PackagePathNames packagePaths, PackageTableSqlInserter inserter, MarkDownWriter md)
         {
             foreach (var path in packagePaths)
             {
+                Debug.WriteLine($"{path.Item2}: {path.Item1}");
                 EtlPackageReader rdr = new EtlPackageReader(path.Item2);
                 if (inserter != null)
                 {
@@ -222,7 +224,7 @@ namespace EtlPackage
         {
             MarkDownWriter md = new MarkDownWriter(Utilities.Cwd()+"\\readme.md");
             PackageTableSqlInserter inserter = null;
-            MsdbPackagePaths packagePaths;
+            PackagePathNames packagePaths;
             packagePaths = SqlUtilities.GetPackageFilePaths(Utilities.Cwd());
             ProcessPackageFilePaths(packagePaths, inserter, md);
         }
@@ -231,16 +233,32 @@ namespace EtlPackage
         {
             MarkDownWriter md = null;
             PackageTableSqlInserter inserter = new PackageTableSqlInserter(SqlUtilities.GetSqlConnection(Environment.MachineName));
-            MsdbPackagePaths packagePaths = SqlUtilities.GetPackageMsdbPaths(Environment.MachineName, "");
-            ProcessPackageFilePaths(packagePaths, inserter, md);
+            PackagePathNames packagePaths = SqlUtilities.GetPackageMsdbPaths(Environment.MachineName, "");
+            ProcessPackageMsdbPaths(Environment.MachineName,packagePaths, inserter, md);
+        }
+        public static void MapMsdbPackage()
+        {
+            string fullPath = @"MSDB\Community\PopulateCommunityMart\PopulateCommunityMart";
+            string packageName = @"PopulateCommunityMart";
+            PackagePathNames packagePaths = new PackagePathNames();
+            packagePaths.Add(new Tuple<string, string>(fullPath, packageName));
+
+            MarkDownWriter md = null;
+            string msdbServerName;
+            msdbServerName = Environment.MachineName;
+            msdbServerName = "STDBDECSUP01";
+            PackageTableSqlInserter inserter = new PackageTableSqlInserter(SqlUtilities.GetSqlConnection(msdbServerName));
+            ProcessPackageMsdbPaths(msdbServerName,packagePaths, inserter, md);
+
         }
         public static void Main(string[] argv)
         {
             TextWriterTraceListener debugWriter = new TextWriterTraceListener(System.Console.Out);
             Debug.Listeners.Add(debugWriter);
 
-            DocumentWorkingDirectoryPackages();
-            MapLocalMsdbPackages();
+            //DocumentWorkingDirectoryPackages();
+            //MapLocalMsdbPackages();
+            MapMsdbPackage();
 
             Console.WriteLine($"\n\nexecution complete.  press any key to exit.");
             Console.ReadKey();
