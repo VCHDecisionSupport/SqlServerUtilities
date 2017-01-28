@@ -73,6 +73,10 @@ namespace EtlPackage
 
 
             }
+            catch(Exception e)
+            {
+                Debug.WriteLine("ERROR");
+            }
         }
 
     }

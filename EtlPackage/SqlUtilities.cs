@@ -313,7 +313,7 @@ namespace EtlPackage
             sqlCmd.CommandType = CommandType.StoredProcedure;
             string cmd_proc = @"AutoTest.dbo.uspGetPackagePath";
             sqlCmd.CommandText = cmd_proc;
-            SqlDataReader rdr = sqlCmd.ExecuteReader();
+            SqlDataReader rdr;
 
 
             try

@@ -232,9 +232,18 @@ namespace EtlPackage
         public static void MapLocalMsdbPackages()
         {
             MarkDownWriter md = null;
+            string msdbServerName;
+            msdbServerName = "STDBDECSUP01";
+            PackageTableSqlInserter inserter = new PackageTableSqlInserter(SqlUtilities.GetSqlConnection(msdbServerName));
+            PackagePathNames packagePaths = SqlUtilities.GetPackageMsdbPaths(msdbServerName, "");
+            ProcessPackageMsdbPaths(msdbServerName, packagePaths, inserter, md);
+        }
+        public static void MapDevMsdbPackages()
+        {
+            MarkDownWriter md = null;
             PackageTableSqlInserter inserter = new PackageTableSqlInserter(SqlUtilities.GetSqlConnection(Environment.MachineName));
             PackagePathNames packagePaths = SqlUtilities.GetPackageMsdbPaths(Environment.MachineName, "");
-            ProcessPackageMsdbPaths(Environment.MachineName,packagePaths, inserter, md);
+            ProcessPackageMsdbPaths(Environment.MachineName, packagePaths, inserter, md);
         }
         public static void MapMsdbPackage()
         {
@@ -258,7 +267,8 @@ namespace EtlPackage
 
             //DocumentWorkingDirectoryPackages();
             //MapLocalMsdbPackages();
-            MapMsdbPackage();
+            //MapMsdbPackage();
+            MapLocalMsdbPackages();
 
             Console.WriteLine($"\n\nexecution complete.  press any key to exit.");
             Console.ReadKey();
