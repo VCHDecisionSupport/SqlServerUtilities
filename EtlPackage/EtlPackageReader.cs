@@ -11,7 +11,7 @@ using Microsoft.SqlServer.Dts.Tasks.ExecuteSQLTask;
 using Microsoft.SqlServer.Management.Smo;
 using Sequence = Microsoft.SqlServer.Dts.Runtime.Sequence;
 
-namespace EtlPackage
+namespace SsisUtility
 {
     // https://msdn.microsoft.com/en-us/library/w369ty8x.aspx
     public enum ExecutableTypeEnum

@@ -13,7 +13,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
-namespace EtlPackage
+namespace SsisUtility
 {
     //using PackageName = String;
     //using PackageFullPath = String;
@@ -272,7 +272,7 @@ namespace EtlPackage
             MapDevMsdbPackages();
 
             Console.WriteLine($"\n\nexecution complete.  press any key to exit.");
-            Console.ReadKey();
+            //Console.ReadKey();
         }
     }
 }

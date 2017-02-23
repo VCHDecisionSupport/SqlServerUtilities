@@ -7,7 +7,7 @@ using Microsoft.SqlServer.Dts.Runtime;
 using Microsoft.SqlServer.Management.Sdk.Sfc;
 using Microsoft.SqlServer.Management.Smo;
 
-namespace EtlPackage
+namespace SsisUtility
 {
     public class EtlPackageBuilder
     {

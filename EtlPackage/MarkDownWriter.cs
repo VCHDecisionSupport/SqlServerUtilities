@@ -7,7 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace EtlPackage
+namespace SsisUtility
 {
     // subscribes to events from EtlPackageReader objects
     public class MarkDownWriter : StreamWriter

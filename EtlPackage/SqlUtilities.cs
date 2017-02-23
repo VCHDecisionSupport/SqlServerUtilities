@@ -11,7 +11,7 @@ using System.IO;
 using Microsoft.SqlServer.Dts.Runtime;
 using System.Data;
 
-namespace EtlPackage
+namespace SsisUtility
 {
 	using PackageName = String;
 	using PackageFullPath = String;

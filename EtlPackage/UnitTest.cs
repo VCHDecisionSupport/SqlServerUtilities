@@ -9,7 +9,7 @@ using Microsoft.SqlServer.Management.Smo;
 using Microsoft.SqlServer.Dts.Runtime;
 using System.Collections.Generic;
 
-namespace EtlPackage
+namespace SsisUtility
 {
     public static class UnitTest
     {

@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("EtlPackageBuilder")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("PackageTableMapper")]
+[assembly: AssemblyDescription("Maps msdb deployed ssis packages to the tables they populate")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Health Shared Services BC")]
-[assembly: AssemblyProduct("EtlPackageBuilder")]
+[assembly: AssemblyProduct("PackageTableMapper")]
 [assembly: AssemblyCopyright("Copyright © Health Shared Services BC 2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
