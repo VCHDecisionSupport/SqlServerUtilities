@@ -185,3 +185,10 @@ SELECT * FROM AutoTest.dbo.TableProfile;
 SELECT * FROM AutoTest.dbo.ColumnProfile;
 SELECT * FROM AutoTest.dbo.ColumnHistogram;
 GO
+
+
+
+DELETE Autotest.MAp.PackageTable;
+EXEC xp_cmdshell 'C:\shared\PackageTableMapper.exe "MSDB\Community\CommunityLoadDSDW\CommunityLoadDSDWChild1"';
+SELECT * FROM Autotest.Map.PackageTable;
+

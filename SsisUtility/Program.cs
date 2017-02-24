@@ -236,7 +236,11 @@ namespace SsisUtility
             msdbServerName = "STDBDECSUP01";
             PackageTableSqlInserter inserter = new PackageTableSqlInserter(SqlUtilities.GetSqlConnection(msdbServerName));
             PackagePathNames packagePaths = SqlUtilities.GetPackageMsdbPaths(msdbServerName, "");
-            ProcessPackageMsdbPaths(msdbServerName, packagePaths, inserter, md);
+            foreach (var path in packagePaths)
+            {
+                System.Console.WriteLine(path);
+            }
+            //ProcessPackageMsdbPaths(msdbServerName, packagePaths, inserter, md);
         }
         public static void MapLocalMsdbPackages()
         {
@@ -260,18 +264,42 @@ namespace SsisUtility
             ProcessPackageMsdbPaths(msdbServerName,packagePaths, inserter, md);
 
         }
+        public static void MapMsdbPackage(string msdbPath)
+        {
+            PackagePathNames packagePaths = new PackagePathNames();
+            string packageName = msdbPath.Split('\\')[msdbPath.Split('\\').Length - 1];
+            packagePaths.Add(new Tuple<string, string>(msdbPath, packageName));
+
+            MarkDownWriter md = null;
+            //string msdbServerName;
+            string msdbServerName = Environment.MachineName;
+            msdbServerName = "STDBDECSUP01";
+            PackageTableSqlInserter inserter = new PackageTableSqlInserter(SqlUtilities.GetSqlConnection(msdbServerName));
+            ProcessPackageMsdbPaths(msdbServerName, packagePaths, inserter, md);
+        }
         public static void Main(string[] argv)
         {
             TextWriterTraceListener debugWriter = new TextWriterTraceListener(System.Console.Out);
             Debug.Listeners.Add(debugWriter);
 
+            if (argv.Length == 0)
+            {
+                System.Console.WriteLine("usage:   PackageTableMapper.exe \"<msdb package path>\"");
+                System.Console.WriteLine("example: PackageTableMapper.exe \"MSDB\\Community\\CommunityLoadDSDW\\CommunityLoadDSDWChild1\"");
+            }
+            else
+            {
+                System.Console.WriteLine($"Mapping tables in package: {argv[0]}");
+                MapMsdbPackage(argv[0]);
+            }
+
             //DocumentWorkingDirectoryPackages();
             //MapLocalMsdbPackages();
             //MapMsdbPackage();
             //MapLocalMsdbPackages();
-            MapDevMsdbPackages();
+            //MapDevMsdbPackages();
 
-            Console.WriteLine($"\n\nexecution complete.  press any key to exit.");
+            //Console.WriteLine($"\n\nexecution complete.  press any key to exit.");
             //Console.ReadKey();
         }
     }
