@@ -192,3 +192,8 @@ DELETE Autotest.MAp.PackageTable;
 EXEC xp_cmdshell 'C:\shared\PackageTableMapper.exe "MSDB\Community\CommunityLoadDSDW\CommunityLoadDSDWChild1"';
 SELECT * FROM Autotest.Map.PackageTable;
 
+DECLARE @PackagePath varchar(500);
+SELECT @PackagePath=PackageFullPath
+FROM msdb.dbo.vwPackagePath
+WHERE PackageName = 'CommunityLoadDSDWChild1'
+SELECT @PackagePath
