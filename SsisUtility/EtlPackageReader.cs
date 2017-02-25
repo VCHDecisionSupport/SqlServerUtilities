@@ -444,8 +444,11 @@ namespace SsisUtility
                             {
                                 Debug.Print($"{nameof(customProperty.Name)}: {customProperty.Name}");
                                 Debug.Print($"{nameof(customProperty.Value)}: {customProperty.Value}");
-                                destinationTableName = valueStr;
-                                destinationDatabaseName = "[" + SqlUtilities.ExtractDatabaseName(_package.Connections[destinationConnectionManagerID].ConnectionString) + "]";
+                                // no square brackets:  AutoTest expected AutoTest.Map.PackageTable to contain exact object name matches
+                                //destinationTableName = valueStr;
+                                destinationTableName = valueStr.Replace("[","").Replace("]","");
+                                //destinationDatabaseName = "[" + SqlUtilities.ExtractDatabaseName(_package.Connections[destinationConnectionManagerID].ConnectionString) + "]";
+                                destinationDatabaseName = SqlUtilities.ExtractDatabaseName(_package.Connections[destinationConnectionManagerID].ConnectionString);
                                 //_md.WriteDataFlowDestinationTable(destinationTableName);
                             }
                         }

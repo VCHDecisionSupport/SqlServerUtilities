@@ -273,12 +273,13 @@ namespace SsisUtility
             MarkDownWriter md = null;
             //string msdbServerName;
             string msdbServerName = Environment.MachineName;
-            msdbServerName = "STDBDECSUP01";
+            //msdbServerName = "STDBDECSUP01";
             PackageTableSqlInserter inserter = new PackageTableSqlInserter(SqlUtilities.GetSqlConnection(msdbServerName));
             ProcessPackageMsdbPaths(msdbServerName, packagePaths, inserter, md);
         }
         public static void Main(string[] argv)
         {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
             TextWriterTraceListener debugWriter = new TextWriterTraceListener(System.Console.Out);
             Debug.Listeners.Add(debugWriter);
 
@@ -292,6 +293,9 @@ namespace SsisUtility
                 System.Console.WriteLine($"Mapping tables in package: {argv[0]}");
                 MapMsdbPackage(argv[0]);
             }
+            watch.Stop();
+            var elapsedMs = watch.ElapsedMilliseconds;
+            Console.WriteLine($"\n\nexecution complete.  runtime: {elapsedMs}ms");
 
             //DocumentWorkingDirectoryPackages();
             //MapLocalMsdbPackages();
