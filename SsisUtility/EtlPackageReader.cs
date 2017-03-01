@@ -182,7 +182,7 @@ namespace SsisUtility
         }
         public EtlPackageReader(string etlPackagePath)
         {
-            Console.WriteLine($"EtlPackageReader({etlPackagePath})...");
+            Console.Write($"EtlPackageReader({etlPackagePath}) loading...");
             _application = new Application();
             IDTSEvents idtsEvents = new DefaultEvents();
             if (File.Exists(etlPackagePath))
@@ -194,17 +194,18 @@ namespace SsisUtility
             }
             else
             {
+                Console.WriteLine();
                 Debug.Write($"ERROR package file NOT found on filesystem\nloading...");
                 throw new Exception($"EtlPackageReader({etlPackagePath}) path not found");
             }
-            Console.WriteLine($"Package {_package.Name} loaded.");
+            Console.WriteLine($"    Package {_package.Name} loaded.");
         }
         public EtlPackageReader(string SsisServerName, string ssisEtlPath)
         {
-            Console.WriteLine($"EtlPackageReader({SsisServerName}, {ssisEtlPath})...");
+            Console.Write($"\t\tEtlPackageReader({SsisServerName}, {ssisEtlPath}) loading...");
             _application = new Application();
             IDTSEvents idtsEvents = new DefaultEvents();
-            bool packageExists;
+            //bool packageExists;
             try
             {
                 //packageExists = _application.ExistsOnDtsServer(ssisEtlPath, SsisServerName);
@@ -213,15 +214,14 @@ namespace SsisUtility
             catch (Exception e)
             {
                 _package = null;
-                Debug.WriteLine(e.GetType());
-                Debug.WriteLine(e.Message);
-                Debug.WriteLine($"ERROR package ({ssisEtlPath}) NOT found on Dts Server: {SsisServerName}\nloading...");
-                //throw new Exception($"EtlPackageReader({ssisEtlPath} on {SsisServerName}) not found");
                 IsValid = false;
+                Console.WriteLine();
+                Exception etlPackageReaderError = new Exception($"ERROR package ({ssisEtlPath}) NOT found on Dts Server: {SsisServerName}\n", e);
+                throw etlPackageReaderError;
             }
             if (_package != null)
             {   
-                Console.WriteLine($"Package: {_package.Name} loaded.");
+                Console.WriteLine($"    package: {_package.Name} loaded.");
             }
         }
         public void ReadConnectionManagers()
@@ -255,17 +255,17 @@ namespace SsisUtility
         {
             OnRaisePackageEvent(new PackageEventArgs(_package.Name));
             Executables executables = _package.Executables;
+            Console.WriteLine("\nProcessing SSIS Package executables...");
             ReadExecutables(executables);
             //_md.Close();
         }
         private void ReadExecutables(Executables executables)
         {
-            NestedLevel += 1;
-            Debug.IndentLevel = NestedLevel;
+
             //_md.NestedLevel += 1;
             foreach (Executable executable in executables)
             {
-                Debug.Print($"executable type: {executable.ToString()}");
+                //Console.WriteLine($"\t\texecutable type: {executable.ToString()}");
                 Debug.Print($"executable type: {executable.ToString()}");
                 if (executable is TaskHost)
                 {
@@ -293,10 +293,14 @@ namespace SsisUtility
                     //Console.WriteLine(string.Format("\t\tName = {0}", seq.Name));
                     //Console.WriteLine(string.Format(fmt, e.GetType().Name, seq.Name));
                     //logFile.WriteLine(string.Format(fmt, e.GetType().Name, seq.Name));
-                    Debug.Print($"executable name: {sequence.Name}");
+                    Console.WriteLine($"{new String('\t', NestedLevel)}Sequence name: {sequence.Name}");
+
                     OnRaiseSequenceEvent(new SequenceEventArgs(sequence.Name, NestedLevel));
+                    NestedLevel += 1;
+                    Debug.IndentLevel = NestedLevel;
                     //_md.WriteTitle($"Sequence: {sequence.Name}");
                     ReadExecutables(sequence.Executables);
+
                 }
                 else if (executable.GetType() == typeof(ForEachLoop))
                 {
@@ -306,10 +310,13 @@ namespace SsisUtility
                     //Console.WriteLine(string.Format("\t\tGetExecutionPath() = {0}", loop.GetExecutionPath()));
                     //Console.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                     //logFile.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
-                    Debug.Print($"executable name: {loop.Name}");
+                    Console.WriteLine($"{new String('\t', NestedLevel)}ForEachLoop name: {loop.Name}");
                     OnRaiseLoopEvent(new LoopEventArgs(loop.Name, NestedLevel));
+                    NestedLevel += 1;
+                    Debug.IndentLevel = NestedLevel;
                     //_md.WriteTitle($"ForEachLoop: {loop.Name}");
                     ReadExecutables(loop.Executables);
+
                 }
                 else if (executable.GetType() == typeof(ForLoop))
                 {
@@ -320,10 +327,13 @@ namespace SsisUtility
                     //Console.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                     //logFile.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                     //string.Format("{0}: {1}", executable.GetType().Name, loop.Name).Print(tabCount, ref LogFile);
-                    Debug.Print($"executable name: {loop.Name}");
+                    Console.WriteLine($"{new String('\t',NestedLevel)}ForLoop name: {loop.Name}");
                     OnRaiseLoopEvent(new LoopEventArgs(loop.Name, NestedLevel));
+                    NestedLevel += 1;
+                    Debug.IndentLevel = NestedLevel;
                     //_md.WriteTitle($"ForLoop: {loop.Name}");
                     ReadExecutables(loop.Executables);
+
                 }
                 else if (executable.GetType() == typeof(Package))
                 {
@@ -334,9 +344,12 @@ namespace SsisUtility
                     //Console.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                     //logFile.WriteLine(string.Format(fmt, e.GetType().Name, loop.Name));
                     OnRaiseChildPackageEvent(new ChildPackageEventArgs(pkg.Name, NestedLevel));
-                    Debug.Print($"Child Package: {pkg.Name}");
+                    Console.WriteLine($"{new String('\t', NestedLevel)}Child Package: {pkg.Name}");
+                    NestedLevel += 1;
+                    Debug.IndentLevel = NestedLevel;
                     //_md.WriteTitle($"executable name: {loop.Name}");
                     ReadExecutables(pkg.Executables);
+
                 }
                 else
                 {
@@ -350,7 +363,7 @@ namespace SsisUtility
         }
         private void ParseExecuteSql(TaskHost taskHost)
         {
-            Debug.Print($"Execute Sql Task: {taskHost.Name}");
+            Console.WriteLine($"{new String('\t', NestedLevel)}Execute Sql Task: {taskHost.Name}");
             NestedLevel += 1;
             Debug.IndentLevel = NestedLevel;
             //_md.WriteTitle($"Execute Sql Task: {taskHost.Name}");
@@ -377,13 +390,13 @@ namespace SsisUtility
         }
         private void ParseDataFlow(TaskHost taskHost)
         {
+            Console.WriteLine($"{new String('\t', NestedLevel)}Data Flow Task: {taskHost.Name}");
             string sourceQuery = null;
             string sourceConnectionManagerID = null;
             string sourceDatabaseName = null;
             string destinationTableName = null;
             string destinationConnectionManagerID = null;
             string destinationDatabaseName = null;
-            Debug.Print($"Data Flow Task: {taskHost.Name}");
             NestedLevel += 1;
             Debug.IndentLevel = NestedLevel;
             // replaced with event handler pattern
@@ -483,11 +496,15 @@ namespace SsisUtility
             if (sourceQuery == null)
             {
                 Debug.Print($"sourceQuery not found");
+                NestedLevel -= 1;
+                Debug.IndentLevel = NestedLevel;
                 return;
             }
             if (destinationTableName == null)
             {
                 Debug.Print($"destinationTableName not found");
+                NestedLevel -= 1;
+                Debug.IndentLevel = NestedLevel;
                 return;
             }
             if (sourceConnectionManagerID != null && destinationConnectionManagerID != null)
@@ -496,7 +513,7 @@ namespace SsisUtility
                     $"-- Source: {sourceConnectionManagerID}\n-- Destination: {destinationConnectionManagerID}\n\n" +
                     sourceQuery;
             }
-            
+
             NestedLevel -= 1;
             Debug.IndentLevel = NestedLevel;
         }

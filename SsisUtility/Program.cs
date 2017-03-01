@@ -167,6 +167,31 @@ namespace SsisUtility
     //}
     public class Program
     {
+        public static void ProcessPackageFilePaths(PackagePathNames packagePaths, PackageTableSqlInserter inserter, MarkDownWriter md)
+        {
+            foreach (var path in packagePaths)
+            {
+                Debug.WriteLine($"{path.Item2}: {path.Item1}");
+                EtlPackageReader rdr = new EtlPackageReader(path.Item2);
+                if (inserter != null)
+                {
+                    inserter.SetEtlPackageReader(rdr);
+                }
+                if (md != null)
+                {
+                    md.SetEtlPackageReader(rdr);
+                }
+                rdr.ProcessPackage();
+            }
+        }
+        public static void DocumentWorkingDirectoryPackages()
+        {
+            MarkDownWriter md = new MarkDownWriter(Utilities.Cwd() + "\\readme.md");
+            PackageTableSqlInserter inserter = null;
+            PackagePathNames packagePaths;
+            packagePaths = SqlUtilities.GetPackageFilePaths(Utilities.Cwd());
+            ProcessPackageFilePaths(packagePaths, inserter, md);
+        }
         public static void ProcessPackageMsdbPaths(string serverName, PackagePathNames packagePaths, PackageTableSqlInserter inserter, MarkDownWriter md)
         {
             foreach (var pathPair in packagePaths)
@@ -187,83 +212,7 @@ namespace SsisUtility
                 }
             }
         }
-        //public static void ProcessPackageFilePaths(Dictionary<string, string> pathDictionary, PackageTableSqlInserter inserter, MarkDownWriter md)
-        //{
-        //    foreach (var path in pathDictionary)
-        //    {
-        //        EtlPackageReader rdr = new EtlPackageReader(path.Value);
-        //        if (inserter != null)
-        //        {
-        //            inserter.SetEtlPackageReader(rdr);
-        //        }
-        //        if (md != null)
-        //        {
-        //            md.SetEtlPackageReader(rdr);
-        //        }
-        //        rdr.ProcessPackage();
-        //    }
-        //}
-        public static void ProcessPackageFilePaths(PackagePathNames packagePaths, PackageTableSqlInserter inserter, MarkDownWriter md)
-        {
-            foreach (var path in packagePaths)
-            {
-                Debug.WriteLine($"{path.Item2}: {path.Item1}");
-                EtlPackageReader rdr = new EtlPackageReader(path.Item2);
-                if (inserter != null)
-                {
-                    inserter.SetEtlPackageReader(rdr);
-                }
-                if (md != null)
-                {
-                    md.SetEtlPackageReader(rdr);
-                }
-                rdr.ProcessPackage();
-            }
-        }
-        public static void DocumentWorkingDirectoryPackages()
-        {
-            MarkDownWriter md = new MarkDownWriter(Utilities.Cwd()+"\\readme.md");
-            PackageTableSqlInserter inserter = null;
-            PackagePathNames packagePaths;
-            packagePaths = SqlUtilities.GetPackageFilePaths(Utilities.Cwd());
-            ProcessPackageFilePaths(packagePaths, inserter, md);
-        }
-
-        public static void MapDevMsdbPackages()
-        {
-            MarkDownWriter md = null;
-            string msdbServerName;
-            msdbServerName = "STDBDECSUP01";
-            PackageTableSqlInserter inserter = new PackageTableSqlInserter(SqlUtilities.GetSqlConnection(msdbServerName));
-            PackagePathNames packagePaths = SqlUtilities.GetPackageMsdbPaths(msdbServerName, "");
-            foreach (var path in packagePaths)
-            {
-                System.Console.WriteLine(path);
-            }
-            //ProcessPackageMsdbPaths(msdbServerName, packagePaths, inserter, md);
-        }
-        public static void MapLocalMsdbPackages()
-        {
-            MarkDownWriter md = null;
-            PackageTableSqlInserter inserter = new PackageTableSqlInserter(SqlUtilities.GetSqlConnection(Environment.MachineName));
-            PackagePathNames packagePaths = SqlUtilities.GetPackageMsdbPaths(Environment.MachineName, "");
-            ProcessPackageMsdbPaths(Environment.MachineName, packagePaths, inserter, md);
-        }
-        public static void MapMsdbPackage()
-        {
-            string fullPath = @"MSDB\Community\PopulateCommunityMart\PopulateCommunityMart";
-            string packageName = @"PopulateCommunityMart";
-            PackagePathNames packagePaths = new PackagePathNames();
-            packagePaths.Add(new Tuple<string, string>(fullPath, packageName));
-
-            MarkDownWriter md = null;
-            string msdbServerName;
-            msdbServerName = Environment.MachineName;
-            msdbServerName = "STDBDECSUP01";
-            PackageTableSqlInserter inserter = new PackageTableSqlInserter(SqlUtilities.GetSqlConnection(msdbServerName));
-            ProcessPackageMsdbPaths(msdbServerName,packagePaths, inserter, md);
-
-        }
+ 
         public static void MapMsdbPackage(string msdbPath)
         {
             PackagePathNames packagePaths = new PackagePathNames();
@@ -271,32 +220,71 @@ namespace SsisUtility
             packagePaths.Add(new Tuple<string, string>(msdbPath, packageName));
 
             MarkDownWriter md = null;
-            //string msdbServerName;
-            string msdbServerName = Environment.MachineName;
+            string msdbServerName;
+            msdbServerName = Environment.MachineName;
+            Console.WriteLine(msdbServerName);
             //msdbServerName = "STDBDECSUP01";
             PackageTableSqlInserter inserter = new PackageTableSqlInserter(SqlUtilities.GetSqlConnection(msdbServerName));
             ProcessPackageMsdbPaths(msdbServerName, packagePaths, inserter, md);
         }
         public static void Main(string[] argv)
         {
-            var watch = System.Diagnostics.Stopwatch.StartNew();
-            TextWriterTraceListener debugWriter = new TextWriterTraceListener(System.Console.Out);
-            Debug.Listeners.Add(debugWriter);
-
-            if (argv.Length == 0)
+            try
             {
-                System.Console.WriteLine("usage:   PackageTableMapper.exe \"<msdb package path>\"");
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                TextWriterTraceListener debugWriter = new TextWriterTraceListener(System.Console.Out);
+                Debug.Listeners.Add(debugWriter);
+                // NullPointer Reference error when ran with xp_cmdshell SQL Server
+                //Console.BufferWidth = 300;
+                if (argv.Length == 0)
+                {
+                    System.Console.WriteLine("\n\n\n-------------------------------------------------\nERROR: PackageTableMapper.exe\n-------------------------------------------------\n");
+                    System.Console.WriteLine("missing msdb package path arguement.");
+                    System.Console.WriteLine("usage:   PackageTableMapper.exe \"<msdb package path>\"");
+                    System.Console.WriteLine("example: PackageTableMapper.exe \"MSDB\\Community\\CommunityLoadDSDW\\CommunityLoadDSDWChild1\"");
+                }
+                else
+                {
+                    System.Console.WriteLine($"\nPackageTableMapper started.\n\tload, parse, and document SSIS package executables using Microsoft.SqlServer.Dts C# namespaces");
+                    System.Console.WriteLine($"\nMapping tables in package: {argv[0]}");
+                    MapMsdbPackage(argv[0]);
+                }
+                watch.Stop();
+                var elapsedMs = watch.ElapsedMilliseconds;
+                Console.WriteLine($"\n\nexecution complete.  runtime: {elapsedMs}ms");
+            }
+            catch (Exception exception)
+            {
+                System.Console.WriteLine("\n\n\n-------------------------------------------------\nERROR: PackageTableMapper.exe\n-------------------------------------------------\n");
+                System.Console.WriteLine($"\nFailed to mapping tables in package: {argv[0]}");
+                System.Console.WriteLine($"\nException Message: {exception.Message}");
+                System.Console.WriteLine($"\n\tInnerException Message: {exception.InnerException.Message}");
+                System.Console.WriteLine($"\n\tInnerInnerException Message: {exception.InnerException.InnerException.Message}");
+                System.Console.WriteLine("\nusage:   PackageTableMapper.exe \"<msdb package path>\"");
                 System.Console.WriteLine("example: PackageTableMapper.exe \"MSDB\\Community\\CommunityLoadDSDW\\CommunityLoadDSDWChild1\"");
+                System.Console.WriteLine("to debug, run above in cmd and check output.");
+                try
+                {
+                    string logName = "PackageTableMapper_ErrorLog.txt";
+                    System.Console.WriteLine($"\n\nattempting to log error to {logName}");
+                    StreamWriter logWriter = new StreamWriter(logName, true);
+                    logWriter.WriteLine($"\n\n\n-------------------------------------------------\nERROR: PackageTableMapper.exe {DateTime.Now}\n-------------------------------------------------\n");
+                    logWriter.WriteLine($"\nFailed to mapping tables in package:\n\t{argv[0]}");
+                    logWriter.WriteLine($"\nException Message: {exception.Message}");
+                    logWriter.WriteLine($"\n\tInnerException Message: {exception.InnerException.Message}");
+                    logWriter.WriteLine($"\n\tInnerInnerException Message: {exception.InnerException.InnerException.Message}");
+                    logWriter.WriteLine("\nusage:   PackageTableMapper.exe \"<msdb package path>\"");
+                    logWriter.WriteLine("example: PackageTableMapper.exe \"MSDB\\Community\\CommunityLoadDSDW\\CommunityLoadDSDWChild1\"");
+                    logWriter.Close();
+                }
+                catch (Exception logError)
+                {
+                    System.Console.WriteLine("Failed to log error.");
+                    System.Console.WriteLine($"\nlog Exception Message: {logError.Message}");
+                    System.Console.WriteLine($"\nlog InnerException Message: {logError.InnerException.Message}");
+                }
             }
-            else
-            {
-                System.Console.WriteLine($"Mapping tables in package: {argv[0]}");
-                MapMsdbPackage(argv[0]);
-            }
-            watch.Stop();
-            var elapsedMs = watch.ElapsedMilliseconds;
-            Console.WriteLine($"\n\nexecution complete.  runtime: {elapsedMs}ms");
-
+            //return 0;
             //DocumentWorkingDirectoryPackages();
             //MapLocalMsdbPackages();
             //MapMsdbPackage();

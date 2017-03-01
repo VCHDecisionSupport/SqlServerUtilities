@@ -9,14 +9,18 @@ using System.Threading.Tasks;
 
 namespace SsisUtility
 {
+    // inserts rows into AutoTest.Map.PackageTable by called stored proc set in AutoTestMappingStoredProcedure property
     public class PackageTableSqlInserter
     {
         public int NestedLevel { get; set; }
         public string PackageName { get; private set; }
         private SqlConnection destSqlConnection { get; set; }
         public string DestinationMappingTableFqName { get; set; } = "";
+        // this stored procedure must exist on Sql Server instance
+        public string AutoTestMappingStoredProcedure { get; set; } = "AutoTest.dbo.uspInsMapPackageTable";
         public PackageTableSqlInserter(SqlConnection destSqlConnection, EtlPackageReader etlPackageReader)
         {
+            Console.WriteLine($"\t\tPackageTableSqlInserter({destSqlConnection.ConnectionString}, EtlPackageReader)");
             NestedLevel = 1;
             etlPackageReader.RaiseDataFlowEvent += HandleDataFlowEvent;
             this.destSqlConnection = destSqlConnection;
@@ -25,6 +29,7 @@ namespace SsisUtility
         }
         public PackageTableSqlInserter(SqlConnection destSqlConnection)
         {
+            Console.WriteLine($"\t\tPackageTableSqlInserter({destSqlConnection.ConnectionString})");
             NestedLevel = 1;
             //etlPackageReader.RaiseDataFlowEvent += HandleDataFlowEvent;
             this.destSqlConnection = destSqlConnection;
@@ -45,7 +50,7 @@ namespace SsisUtility
         {
             SqlCommand sqlCmd = destSqlConnection.CreateCommand();
             sqlCmd.CommandType = CommandType.StoredProcedure;
-            sqlCmd.CommandText = $@"AutoTest.dbo.uspInsMapPackageTable";
+            sqlCmd.CommandText = AutoTestMappingStoredProcedure;
             try
             {
                 
@@ -67,9 +72,10 @@ namespace SsisUtility
             }
             catch (SqlException e)
             {
-                Debug.WriteLine($"\n\n\n\n\n\n-----------------------------------------------\n\nunable to insert mapping: {PackageName} -> {dataFlowEventArgs.DestinationTableName} into table: {DestinationMappingTableFqName}\n{e.GetType()}\n{sqlCmd.CommandText}\n\n{sqlCmd.Connection.ConnectionString}\n\n");
+                Exception exception = new Exception($"unable to insert mapping: {PackageName} -> {dataFlowEventArgs.DestinationTableName} into table: {DestinationMappingTableFqName}\n{e.GetType()}\n{sqlCmd.CommandText}\n\n{sqlCmd.Connection.ConnectionString}\n\n", e);
+                Debug.WriteLine($"{exception.Message}");
                 Debug.WriteLine($"{e.Message}");
-                throw e;
+                throw exception;
 
 
             }

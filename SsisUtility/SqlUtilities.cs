@@ -150,19 +150,20 @@ namespace SsisUtility
 		{
 			try
 			{
-				SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
+                //System.Console.Write($"\tConnecting to sql server: {server}...");
+                SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
 				builder.DataSource = server;
 				builder.IntegratedSecurity = true;
 				SqlConnection sqlConnection = new SqlConnection(builder.ConnectionString);
 				sqlConnection.Open();
 				ServerConnection serverConnection = new ServerConnection(sqlConnection);
+                //System.Console.WriteLine($"\tconnection successful.");
 				return sqlConnection;
-			}
+            }
 			catch (Exception e)
 			{
-				Debug.WriteLine($"ERROR: unable to connection server: {server}");
-				Environment.Exit(0);
-				return null;
+                Exception sqlConnectionError = new Exception($"\n\tERROR: unable to connect to Sql server: {server}", e);
+                throw sqlConnectionError;
 			}
 		}
 		public static Server GetServer(string serverName)
